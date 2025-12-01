@@ -1,0 +1,328 @@
+:root{
+  --bg: #0f0f10;
+  --surface: #111214;
+  --card: #ffffff;
+  --text: #111;
+  --text-invert: #fff;
+  --primary: #6c4ef7; /* ungu */
+  --primary-hover: #5a3ee6;
+  --accent: #1e90ff;  /* biru */
+  --muted: #777;
+  --success: #2fb344;
+  --danger: #d64545;
+  --border: #e6e6e6;
+}
+*{box-sizing: border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text-invert);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+}
+a{
+  color:inherit;
+  text-decoration:none;
+}
+
+header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 18px;
+  background:#000;
+  border-bottom:1px solid #1a1a1a;
+  position:sticky;
+  top:0;
+  z-index:20;
+}
+.brand{
+  font-weight:800;
+  letter-spacing:0.5px
+}
+.brand span{color:var(--primary)}
+
+.app{
+  display:flex;
+  min-height: calc(100vh - 56px);
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; 
+  height: 100vh;
+  padding: 18px;
+  background: var(--surface);
+  border-right: 1px solid #1a1a1a;
+  position: sticky;
+  top: 0;
+}
+
+.profile{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:18px;
+}
+.avatar{
+  width:52px;
+  height:52px;
+  border-radius:50%;
+  background:#222;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+  border:2px solid #333;
+}
+.logout {
+  margin-top: auto; 
+  color: #eee;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px dashed #333;
+  text-align: center;
+}
+.logout:hover {
+  background: #18191c;
+}
+.profile .meta{line-height:1.35}
+.profile .name{font-weight:700}
+.profile .id{font-size:13px; color:#bbb}
+.nav{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:10px;
+}
+
+.btn{
+  display:block;
+  width:100%;
+  padding:12px 14px;
+  border-radius:10px;
+  border:1px solid #222;
+  background:#131316;
+  color:#fff;
+  font-weight:600;
+  text-align:center;
+  transition:.2s;
+  cursor:pointer;
+}
+.btn:hover{background:#1a1b1f}
+.btn.primary{
+  background:var(--accent);
+  border-color:#1570c8
+}
+.btn.primary:hover{background:#1a82ff}
+.btn.purple{
+  background:var(--primary);
+  border-color:#4c32de;
+}
+.btn.purple:hover{background:var(--primary-hover)}
+
+main{
+  flex:1;
+  padding:20px;
+}
+.card{
+  background:var(--card);
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:18px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+}
+h2{margin:0 0 12px}
+.grid{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(240px,1fr));
+  gap:14px;
+}
+.chip{
+  display:inline-flex;
+   align-items:center;
+   gap:8px;
+   padding:6px 10px;
+   border-radius:20px;
+   font-size:13px;
+   border:1px solid #ddd;
+   background:#f8f8f8;
+}
+.chip.success{
+  border-color:#cfe9d6;
+  background:#eaf7ee;
+  color:#1d7a32;
+}
+.chip.soon{
+  border-color:#d7e7ff;
+  background:#eef6ff;
+  color:#0b5fcc;
+}
+.chip.done{
+  border-color:#f1d2d2;
+  background:#fff3f3;
+  color:#9b1c1c;
+}
+.meta-row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:8px;
+  color:#555;
+  font-size:14px;
+}
+.actions{
+  margin-top:12px;
+  display:flex;
+  gap:10px;
+}
+.small{
+  font-size:13px;
+  color:#666;
+}
+
+/* Center / Login */
+.center{
+  display:flex;
+   align-items:center;
+   justify-content:center;
+   min-height:100vh;
+   padding:24px;
+}
+.login-box{
+  width:100%;
+ max-width:420px;
+  background:#000; 
+  border:1px solid #1a1a1a; 
+  border-radius:16px; 
+  padding:22px;
+}
+.login-title{
+  color:#fff; 
+  font-size:20px; 
+  font-weight:800; 
+  text-align:center; 
+  margin-bottom:14px;
+}
+.input{
+  display:flex;
+   align-items:center; 
+   gap:10px; 
+   background:#0d0d0f; 
+   border:1px solid #1a1a1a; 
+   border-radius:12px; 
+   padding:12px; 
+   margin-bottom:12px; 
+   color:#ddd;
+}
+.input input{
+  flex:1;
+  background:transparent; 
+  border:none; 
+  outline:none; 
+  color:#fff;
+}
+.login-btn{
+  width:100%;
+  padding:12px; 
+  border:none; 
+  border-radius:12px; 
+  background:var(--primary); 
+  color:#fff; 
+  font-weight:700; 
+  cursor:pointer;
+}
+.login-btn:hover{background:var(--primary-hover)}
+.note{
+  color:#aaa; 
+  font-size:13px; 
+  text-align:center; 
+  margin-top:6px;
+}
+
+/* Masuk Kelas Page */
+.class-card{
+  max-width:680px;
+  margin:0 auto;
+}
+.class-title{
+  font-weight:800; 
+  font-size:20px;
+}
+.class-info{
+  display:grid; 
+  grid-template-columns:1fr 1fr; 
+  gap:8px; 
+  margin-top:8px;
+}
+.info-row{
+  display:flex; 
+  align-items:center; 
+  gap:8px; 
+  color:#444;
+}
+.cta{
+  margin-top:16px;
+}
+.status-banner{
+  margin-top:12px;
+   padding:10px 12px; 
+   border-radius:10px; 
+   background:#f7f7f7; 
+   color:#1d7a32; 
+   border:1px solid #cfe9d6; 
+   display:none;
+}
+.status-banner.error{
+  color:#9b1c1c; 
+  border-color:#f1d2d2; 
+  background:#fff8f8;
+}
+
+/* Modal */
+.modal-backdrop{
+  position:fixed;
+   inset:0;
+    background:rgba(0,0,0,.6); 
+     display:none; 
+     align-items:center; 
+     justify-content:center; 
+     z-index:100;
+}
+.modal{
+  width:100%;
+   max-width:420px;
+    background:#fff; 
+    color:#111; 
+    border-radius:14px; 
+    padding:18px; 
+    box-shadow:0 10px 28px rgba(0,0,0,.25);
+}
+.modal h3{margin:0 0 8px}
+.modal .field{margin-top:10px}
+.modal input{
+  width:100%;
+   padding:10px; 
+   border-radius:10px; 
+   border:1px solid #ddd;
+}
+.modal .row{
+  display:flex; 
+  gap:10px; 
+  margin-top:14px;
+}
+.modal .row .btn{flex:1}
+
+/* Responsive */
+@media (max-width: 980px){
+  .grid{grid-template-columns: 1fr 1fr}
+}
+@media (max-width: 720px){
+  .app{flex-direction:column}
+  .sidebar{width:100%; height:auto; position:static}
+  .grid{grid-template-columns: 1fr}
+  .class-info{grid-template-columns: 1fr}
+}

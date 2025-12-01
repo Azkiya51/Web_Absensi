@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SAKTI Website - Web Absensi Mahasiswa</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header>
+  <div class="brand">SAKTI <span>Website</span></div>
+  <div id="headerAction" style="display:none;">
+    <a href="#masuk-kelas" class="btn purple">Masuk Kelas</a>
+  </div>
+</header>
+
+<div id="loginView" class="center">
+  <div class="login-box">
+    <div class="login-title">SAKTI Website</div>
+    <div class="input"><span>👤</span><input id="username" type="text" placeholder="Username"/></div>
+    <div class="input"><span>🔒</span><input id="password" type="password" placeholder="Password"/></div>
+    <button id="loginBtn" class="login-btn">Login</button>
+    <div class="note">Gunakan username admin, password: admin123</div>
+  </div>
+</div>
+
+<div id="appView" class="app" style="display:none;">
+  <aside class="sidebar">
+    <div class="profile">
+      <div class="avatar" id="avatar">AM</div>
+      <div class="meta">
+        <div class="name" id="profileName">Admin</div>
+        <div class="id" id="profileId">123456789</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="#dashboard" class="btn primary" id="navDashboard">Dashboard</a>
+      <a href="#masuk-kelas" class="btn purple" id="navMasukKelas">Masuk Kelas</a>
+    </nav>
+    <div class="logout" id="logoutBtn">Log Out</div>
+  </aside>
+
+  <main>
+    <section id="dashboardPage" style="display:none;">
+      <div class="card">
+        <h2>Jadwal Hari Ini</h2>
+        <div class="grid" id="scheduleGrid"></div>
+      </div>
+    </section>
+
+    <section id="masukKelasPage" style="display:none;">
+      <div class="card class-card">
+        <div class="class-title" id="mkTitle">Algoritma dan Struktur Data</div>
+        <div class="small" id="mkSubtitle">Dosen: Dr. Andi</div>
+
+        <div class="class-info">
+          <div class="info-row">🕒 <span id="mkTime">08:00 - 09:40</span></div>
+          <div class="info-row">📍 <span id="mkRoom">Ruang B-203</span></div>
+          <div class="info-row">🏷️ <span id="mkCode">WIR554221</span></div>
+          <div class="info-row">👥 <span id="mkAttendance">Status: Belum Absen</span></div>
+        </div>
+
+        <div class="cta">
+          <button class="btn purple" id="btnMasukKelas">MASUK KELAS</button>
+        </div>
+
+        <div class="status-banner" id="mkStatusBanner">Anda berhasil masuk kelas. Kehadiran tercatat.</div>
+        <div class="status-banner error" id="mkErrorBanner">Gagal masuk kelas. Periksa waktu sesi atau PIN.</div>
+
+        <div class="small">
+          Materi Hari Ini: <a href="#" id="mkMaterial">Download PDF</a> • Catatan: Quiz minggu depan
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h3>Validasi Masuk Kelas</h3>
+    <div class="small">Masukkan PIN sesi yang diberikan oleh dosen di kelas.</div>
+    <div class="field">
+      <input type="text" id="pinInput" placeholder="Masukkan PIN sesi"/>
+    </div>
+    <div class="row">
+      <button class="btn" id="cancelPin">Batal</button>
+      <button class="btn purple" id="confirmPin">Konfirmasi</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
