@@ -4,9 +4,9 @@
   --card: #ffffff;
   --text: #111;
   --text-invert: #fff;
-  --primary: #6c4ef7; /* ungu */
+  --primary: #6c4ef7; 
   --primary-hover: #5a3ee6;
-  --accent: #1e90ff;  /* biru */
+  --accent: #1e90ff;  
   --muted: #777;
   --success: #2fb344;
   --danger: #d64545;
@@ -316,7 +316,6 @@ h2{margin:0 0 12px}
 }
 .modal .row .btn{flex:1}
 
-/* Responsive */
 @media (max-width: 980px){
   .grid{grid-template-columns: 1fr 1fr}
 }
