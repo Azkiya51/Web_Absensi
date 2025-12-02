@@ -3,27 +3,53 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SAKTI Website - Web Absensi Mahasiswa</title>
+  <title>SAKTI WEBSITE - Web Absensi Mahasiswa</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
 <header>
-  <div class="brand">SAKTI <span>Website</span></div>
+  <div class="brand">SAKTI <span>WEBSITE</span></div>
   <div id="headerAction" style="display:none;">
     <a href="#masuk-kelas" class="btn purple">Masuk Kelas</a>
   </div>
 </header>
 
 <div id="loginView" class="center">
-  <div class="login-box">
-    <div class="login-title">SAKTI Website</div>
-    <div class="input"><span>👤</span><input id="username" type="text" placeholder="Username"/></div>
-    <div class="input"><span>🔒</span><input id="password" type="password" placeholder="Password"/></div>
-    <button id="loginBtn" class="login-btn">Login</button>
-    <div class="note">Gunakan username admin, password: admin123</div>
+  <div class="laptop">
+    <div class="laptop-screen">
+      <div class="login-box">
+        <!-- AVATAR DI ATAS CARD -->
+        <div class="login-avatar">
+          <div class="avatar-circle"></div>
+        </div>
+
+        <div class="login-title">SAKTI WEBSITE</div>
+
+        <div class="input input-username">
+          <span>👤</span>
+          <input id="username" type="text" placeholder="Username" />
+        </div>
+        
+        <div class="input input-password">
+          <span>🔒</span>
+          <input id="password" type="password" placeholder="Password" />
+        </div>
+
+
+        <button id="loginBtn" class="login-btn">Login</button>
+
+        <div class="note">
+          Gunakan username admin, password: admin123
+        </div>
+      </div>
+    </div>
+
+    <!-- BAGIAN BAWAH LAPTOP -->
+    <div class="laptop-base"></div>
   </div>
 </div>
+
 
 <div id="appView" class="app" style="display:none;">
   <aside class="sidebar">
