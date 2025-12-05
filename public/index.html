@@ -71,10 +71,46 @@
             <section id="dashboardPage" style="display:none;">
                 <h2 class="page-title">Dashboard</h2>
                 
-                <div class="card" style="max-width: 400px; margin-bottom: 20px;">
-                    <h3>Statistik Mahasiswa</h3>
-                    <table class="data-table">
-                        <tbody id="statsTableBody">
+                <div class="dashboard-grid">
+                
+                    <div class="card" style="margin-bottom: 20px;">
+                        <h3>Statistik Mahasiswa</h3>
+                        <table class="data-table">
+                            <tbody id="statsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+    
+                    <div class="card">
+                        <h3>Mahasiswa Absen Hari Ini</h3>
+                        <table class="data-table" style="width:100%; margin-top: 15px;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border)">
+                                    <th style="padding: 10px 0; text-align: left;">NIM</th>
+                                    <th style="padding: 10px 0; text-align: left;">Nama</th>
+                                    <th style="padding: 10px 0; text-align: left;">Mata Kuliah</th>
+                                    <th style="padding: 10px 0; text-align: right;">Waktu</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendedTableBody">
+                                </tbody>
+                        </table>
+                    </div>
+
+                </div>
+                
+                <div class="card" style="margin-top: 20px;">
+                    <h3>Log Kartu Invalid Terbaru</h3>
+                    <div class="small" style="margin-bottom: 10px;">Untuk detail lebih lanjut, kunjungi menu **Kartu Invalid**.</div>
+                    <table class="data-table" style="width:100%;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--border)">
+                                <th style="padding: 10px 0; text-align: left;">Tanggal</th>
+                                <th style="padding: 10px 0; text-align: left;">UID</th>
+                                <th style="padding: 10px 0; text-align: left;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invalidSummaryTableBody">
                             </tbody>
                     </table>
                 </div>
@@ -92,20 +128,19 @@
                         <div class="info-row">🕒 <span id="mkTime">08:00 - 09:40</span></div>
                         <div class="info-row">📍 <span id="mkRoom">Ruang B-203</span></div>
                         <div class="info-row">🏷️ <span id="mkCode">WIR554221</span></div>
-                        <div class="info-row">👥 <span id="mkAttendance">Status: Belum Absen</span></div>
+                        <div class="info-row">👤 <span id="mkAttendance">Status: Belum Absen</span></div>
                     </div>
 
                     <div class="cta">
-                        <button class="btn purple" id="btnMasukKelas">MASUK KELAS</button>
+                        <button class="btn purple" id="btnMasukKelas">LIHAT DAFTAR HADIR</button>
                     </div>
 
                     <div class="status-banner" id="mkStatusBanner">Anda berhasil masuk kelas. Kehadiran tercatat.</div>
-                    <div class="status-banner error" id="mkErrorBanner">Gagal masuk kelas. Periksa waktu sesi atau PIN.</div>
-
-                    <div class="small">
-                        Catatan: Quiz minggu depan
-                    </div>
+                    <div class="status-banner error" id="mkErrorBanner">Gagal masuk kelas. Periksa waktu sesi.</div>
                 </div>
+
+                <div id="sessionAttendanceContainer">
+                    </div>
 
                 <div class="card" style="margin-top: 20px;">
                     <h3>Jadwal Hari Ini</h3>
@@ -134,22 +169,9 @@
                     </table>
                 </div>
             </section>
-            </main>
-    </div>
-</div>
 
-<div class="modal-backdrop" id="modalBackdrop">
-  <div class="modal">
-    <h3>Validasi Masuk Kelas</h3>
-    <div class="small">Masukkan PIN sesi yang diberikan oleh dosen di kelas.</div>
-    <div class="field">
-      <input type="text" id="pinInput" placeholder="Masukkan PIN sesi"/>
+        </main>
     </div>
-    <div class="row">
-      <button class="btn" id="cancelPin">Batal</button>
-      <button class="btn purple" id="confirmPin">Konfirmasi</button>
-    </div>
-  </div>
 </div>
 
 <script src="app.js"></script>
