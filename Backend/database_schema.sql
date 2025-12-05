@@ -4,57 +4,34 @@ USE attendance_db;
 
 -- Tabel students (data mahasiswa terdaftar)
 CREATE TABLE students (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  nim VARCHAR(20) NOT NULL UNIQUE,
-  angkatan YEAR NOT NULL,
-  rfid_card_id VARCHAR(50) NOT NULL UNIQUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_rfid (rfid_card_id),
-  INDEX idx_nim (nim),
-  INDEX idx_angkatan (angkatan)
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  nim VARCHAR(20) NOT NULL UNIQUE,
+  angkatan YEAR NOT NULL,
+  rfid_card_id VARCHAR(50) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_angkatan (angkatan) -- Index pada nim dan rfid_card_id sudah tercakup oleh UNIQUE
 );
 
 -- Tabel attendances (riwayat absensi)
 CREATE TABLE attendances (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  student_id INT NOT NULL,
-  scan_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
-  INDEX idx_-- Buat database
-CREATE DATABASE IF NOT EXISTS attendance_db;
-USE attendance_db;
-
--- Tabel students (data mahasiswa terdaftar)
-CREATE TABLE students (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  nim VARCHAR(20) NOT NULL UNIQUE,
-  angkatan YEAR NOT NULL,
-  rfid_card_id VARCHAR(50) NOT NULL UNIQUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_rfid (rfid_card_id),
-  INDEX idx_nim (nim),
-  INDEX idx_angkatan (angkatan)
-);
-
--- Tabel attendances (riwayat absensi)
-CREATE TABLE attendances (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  student_id INT NOT NULL,
-  scan_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
-  INDEX idx_student_date (student_id, scan_time),
-  INDEX idx_scan_time (scan_time)
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_id INT NOT NULL,
+  scan_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+  -- Index komposit untuk cek absensi harian spesifik mahasiswa
+  INDEX idx_student_date (student_id, scan_time), 
+  -- Index untuk query absensi berdasarkan waktu/rentang waktu
+  INDEX idx_scan_time (scan_time)
 );
 
 -- Tabel invalid_scans (kartu tidak terdaftar)
 CREATE TABLE invalid_scans (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  card_id VARCHAR(50) NOT NULL,
-  scan_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_card_id (card_id),
-  INDEX idx_scan_time (scan_time)
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  -- card_id dibuat UNIQUE untuk memastikan hanya ada satu entri per kartu invalid
+  card_id VARCHAR(50) NOT NULL UNIQUE, 
+  scan_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_scan_time (scan_time)
 );
 
 -- Insert data contoh mahasiswa untuk testing
@@ -75,6 +52,6 @@ INSERT INTO invalid_scans (card_id) VALUES
 SELECT * FROM students ORDER BY angkatan DESC, name;
 SELECT * FROM attendances;
 SELECT * FROM invalid_scans ORDER BY scan_time DESC;student_date (student_id, scan_time),
-  INDEX idx_scan_time (scan_time)
-);
+INDEX idx_scan_time (scan_time)
+;
 
