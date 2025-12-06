@@ -6,6 +6,15 @@ require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const DB_HOST = process.env.DB_HOST;
+const DB_USER = process.env.DB_USER;
+const DB_PASSWORD = process.env.DB_PASSWORD;
+const DB_NAME = process.env.DB_NAME;
+
+// KREDENSIAL ADMIN STATIS (Hanya digunakan untuk LOGIN endpoint)
+const STATIC_USERNAME = "admin";
+const STATIC_PASSWORD = "informatikasakti";
+const STATIC_NAME = "Admin SAKTI";
 
 // Middleware
 app.use(cors());
@@ -14,10 +23,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // Database Connection Pool
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "attendance_db",
+  host: DB_HOST,
+  user: DB_USER,
+  password: DB_PASSWORD,
+  database: DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -31,110 +40,147 @@ pool
     connection.release();
   })
   .catch((err) => {
-    console.error("Database connection failed:", err.message);
+    console.error(
+      "Database connection failed. Check your .env file:",
+      err.message
+    );
+    process.exit(1);
   });
 
-// ==================== SCAN ENDPOINT ====================
-// Endpoint untuk menerima scan dari Arduino
-app.post("/api/scan", async (req, res) => {
+// ==================== AUTH ENDPOINT (TETAP DIPERLUKAN UNTUK LOGIN) ====================
+app.post("/api/auth/login", async (req, res) => {
   try {
-    const { cardId } = req.body;
+    const { username, password } = req.body;
 
-    // Validasi input
-    if (!cardId) {
+    if (!username || !password) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Username dan password diperlukan." });
+    }
+
+    const usernameMatch = username === STATIC_USERNAME;
+    const passwordMatch = password === STATIC_PASSWORD;
+
+    if (usernameMatch && passwordMatch) {
+      // Buat Mock Token (Token tetap dibuat, tapi API lain tidak memerlukannya)
+      const token = "mock-jwt-token-1-" + new Date().getTime();
+      return res.json({
+        success: true,
+        message: "Login Berhasil",
+        data: {
+          token,
+          name: STATIC_NAME,
+          username: STATIC_USERNAME,
+        },
+      });
+    } else {
+      return res
+        .status(401)
+        .json({ success: false, message: "Username atau Password salah." });
+    }
+  } catch (error) {
+    console.error("Login Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Terjadi kesalahan server saat login.",
+    });
+  }
+});
+
+// ==================== SCAN ENDPOINT ====================
+app.post("/api/scan", async (req, res) => {
+  // KODE SAMA DENGAN VERSI SEBELUMNYA
+  try {
+    const { cardId, scheduleCode } = req.body;
+
+    if (!cardId || !scheduleCode) {
       return res.status(400).json({
         success: false,
-        message: "Card ID tidak boleh kosong",
+        message: "Card ID dan Schedule Code tidak boleh kosong.",
       });
     }
 
-    // Cari mahasiswa berdasarkan RFID card ID
+    const [schedule] = await pool.query(
+      "SELECT id, title, start_time, end_time FROM schedules WHERE code = ?",
+      [scheduleCode]
+    );
+    if (schedule.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Kode sesi tidak valid." });
+    }
+    const session = schedule[0];
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+    const [startH, startM] = session.start_time.split(":").map(Number);
+    const [endH, endM] = session.end_time.split(":").map(Number);
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+
+    if (nowMinutes < startMinutes || nowMinutes > endMinutes) {
+      await pool.query(
+        "INSERT INTO invalid_scans (card_id, scan_time, status) VALUES (?, NOW(), 'Sesi Tidak Aktif')",
+        [cardId]
+      );
+      return res.status(400).json({
+        success: false,
+        message: `Sesi ${session.title} tidak aktif saat ini (${session.start_time}-${session.end_time}).`,
+      });
+    }
+
     const [students] = await pool.query(
-      "SELECT id, name, nim, angkatan, rfid_card_id FROM students WHERE rfid_card_id = ?",
+      "SELECT id, name, nim, rfid_card_id FROM students WHERE rfid_card_id = ?",
       [cardId]
     );
 
-    // Jika kartu ditemukan di database
     if (students.length > 0) {
       const student = students[0];
 
-      // Cek apakah sudah absen hari ini
       const today = new Date().toISOString().split("T")[0];
       const [existingAttendance] = await pool.query(
-        "SELECT id FROM attendances WHERE student_id = ? AND DATE(scan_time) = ?",
-        [student.id, today]
+        "SELECT id FROM attendances WHERE student_id = ? AND schedule_code = ? AND DATE(scan_time) = ?",
+        [student.id, scheduleCode, today]
       );
 
-      // Jika sudah absen hari ini
       if (existingAttendance.length > 0) {
         return res.status(200).json({
           success: true,
           alreadyScanned: true,
-          message: `${student.name} sudah absen hari ini`,
-          data: {
-            studentId: student.id,
-            name: student.name,
-            nim: student.nim,
-            angkatan: student.angkatan,
-            cardId: student.rfid_card_id,
-          },
+          message: `${student.name} sudah absen untuk sesi ini.`,
+          data: student,
         });
       }
 
-      // Simpan data absensi
       const [result] = await pool.query(
-        "INSERT INTO attendances (student_id, scan_time) VALUES (?, NOW())",
-        [student.id]
+        "INSERT INTO attendances (student_id, schedule_code, scan_time) VALUES (?, ?, NOW())",
+        [student.id, scheduleCode]
       );
 
       return res.status(200).json({
         success: true,
-        message: `Absensi berhasil! Selamat datang ${student.name}`,
+        message: `Absensi berhasil! Selamat datang ${student.name} di ${session.title}`,
         data: {
           attendanceId: result.insertId,
-          studentId: student.id,
-          name: student.name,
-          nim: student.nim,
-          angkatan: student.angkatan,
-          cardId: student.rfid_card_id,
+          ...student,
           scanTime: new Date().toISOString(),
         },
       });
-    }
-    // Jika kartu TIDAK ditemukan
-    else {
-      // Cek apakah card_id ini sudah ada di invalid_scans (untuk menghindari duplikat)
-      const [existing] = await pool.query(
-        "SELECT id FROM invalid_scans WHERE card_id = ? AND DATE(scan_time) = CURDATE()",
+    } else {
+      const [result] = await pool.query(
+        "INSERT INTO invalid_scans (card_id, scan_time, status) VALUES (?, NOW(), 'Tidak Terdaftar')",
         [cardId]
       );
 
-      // Jika belum ada record hari ini, baru insert
-      if (existing.length === 0) {
-        const [result] = await pool.query(
-          "INSERT INTO invalid_scans (card_id, scan_time) VALUES (?, NOW())",
-          [cardId]
-        );
-
-        return res.status(404).json({
-          success: false,
-          message: "Kartu tidak terdaftar!",
-          data: {
-            invalidScanId: result.insertId,
-            cardId: cardId,
-            scanTime: new Date().toISOString(),
-          },
-        });
-      } else {
-        return res.status(404).json({
-          success: false,
-          message: "Kartu tidak terdaftar!",
-          data: {
-            cardId: cardId,
-            scanTime: new Date().toISOString(),
-          },
-        });
-      }
+      return res.status(404).json({
+        success: false,
+        message: "Kartu tidak terdaftar!",
+        data: {
+          invalidScanId: result.insertId,
+          cardId: cardId,
+          scanTime: new Date().toISOString(),
+        },
+      });
     }
   } catch (error) {
     console.error("Error processing scan:", error);
@@ -146,267 +192,55 @@ app.post("/api/scan", async (req, res) => {
   }
 });
 
-// ==================== STUDENTS ENDPOINTS ====================
-
-// Get semua mahasiswa
-app.get("/api/students", async (req, res) => {
+// ==================== SCHEDULES ENDPOINTS ====================
+// JARVIS MODIFICATION: requireAuth DIHAPUS
+app.get("/api/schedules/today", async (req, res) => {
   try {
-    const [students] = await pool.query(
-      "SELECT id, name, nim, angkatan, rfid_card_id, created_at FROM students ORDER BY angkatan DESC, name ASC"
+    const todayEng = new Date()
+      .toLocaleDateString("en-US", { weekday: "long" })
+      .toUpperCase();
+
+    const [schedules] = await pool.query(
+      "SELECT title, lecturer, room, code, TIME_FORMAT(start_time, '%H:%i') as start_time, TIME_FORMAT(end_time, '%H:%i') as end_time, day_of_week FROM schedules WHERE day_of_week = ? ORDER BY start_time ASC",
+      [todayEng]
     );
 
     res.json({
       success: true,
-      count: students.length,
-      data: students,
+      count: schedules.length,
+      data: schedules,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Gagal mengambil data mahasiswa",
-      error: error.message,
-    });
-  }
-});
-
-// Get mahasiswa by ID
-app.get("/api/students/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [students] = await pool.query(
-      "SELECT id, name, nim, angkatan, rfid_card_id, created_at FROM students WHERE id = ?",
-      [id]
-    );
-
-    if (students.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Mahasiswa tidak ditemukan",
-      });
-    }
-
-    res.json({
-      success: true,
-      data: students[0],
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Gagal mengambil data mahasiswa",
-      error: error.message,
-    });
-  }
-});
-
-// Register mahasiswa baru
-app.post("/api/students/register", async (req, res) => {
-  try {
-    const { name, nim, angkatan, cardId } = req.body;
-
-    // Validasi input
-    if (!name || !nim || !angkatan || !cardId) {
-      return res.status(400).json({
-        success: false,
-        message: "Semua field harus diisi (name, nim, angkatan, cardId)",
-      });
-    }
-
-    // Cek apakah NIM sudah terdaftar
-    const [existingNim] = await pool.query(
-      "SELECT id FROM students WHERE nim = ?",
-      [nim]
-    );
-
-    if (existingNim.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "NIM sudah terdaftar",
-      });
-    }
-
-    // Cek apakah card ID sudah terdaftar
-    const [existingCard] = await pool.query(
-      "SELECT id FROM students WHERE rfid_card_id = ?",
-      [cardId]
-    );
-
-    if (existingCard.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Card ID sudah terdaftar",
-      });
-    }
-
-    // Insert mahasiswa baru
-    const [result] = await pool.query(
-      "INSERT INTO students (name, nim, angkatan, rfid_card_id) VALUES (?, ?, ?, ?)",
-      [name, nim, angkatan, cardId]
-    );
-
-    // Hapus dari invalid_scans jika ada
-    await pool.query("DELETE FROM invalid_scans WHERE card_id = ?", [cardId]);
-
-    res.status(201).json({
-      success: true,
-      message: "Mahasiswa berhasil didaftarkan",
-      data: {
-        id: result.insertId,
-        name,
-        nim,
-        angkatan,
-        cardId,
-      },
-    });
-  } catch (error) {
-    console.error("Error registering student:", error);
-    res.status(500).json({
-      success: false,
-      message: "Gagal mendaftarkan mahasiswa",
-      error: error.message,
-    });
-  }
-});
-
-// Update mahasiswa
-app.put("/api/students/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, nim, angkatan, cardId } = req.body;
-
-    // Validasi input
-    if (!name || !nim || !angkatan || !cardId) {
-      return res.status(400).json({
-        success: false,
-        message: "Semua field harus diisi (name, nim, angkatan, cardId)",
-      });
-    }
-
-    // Cek apakah mahasiswa exist
-    const [students] = await pool.query(
-      "SELECT id FROM students WHERE id = ?",
-      [id]
-    );
-
-    if (students.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Mahasiswa tidak ditemukan",
-      });
-    }
-
-    // Cek apakah NIM sudah dipakai oleh mahasiswa lain
-    const [existingNim] = await pool.query(
-      "SELECT id FROM students WHERE nim = ? AND id != ?",
-      [nim, id]
-    );
-
-    if (existingNim.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "NIM sudah digunakan oleh mahasiswa lain",
-      });
-    }
-
-    // Cek apakah card ID sudah dipakai oleh mahasiswa lain
-    const [existingCard] = await pool.query(
-      "SELECT id FROM students WHERE rfid_card_id = ? AND id != ?",
-      [cardId, id]
-    );
-
-    if (existingCard.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Card ID sudah digunakan oleh mahasiswa lain",
-      });
-    }
-
-    // Update data
-    await pool.query(
-      "UPDATE students SET name = ?, nim = ?, angkatan = ?, rfid_card_id = ? WHERE id = ?",
-      [name, nim, angkatan, cardId, id]
-    );
-
-    res.json({
-      success: true,
-      message: "Data mahasiswa berhasil diupdate",
-      data: {
-        id,
-        name,
-        nim,
-        angkatan,
-        cardId,
-      },
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Gagal mengupdate data mahasiswa",
-      error: error.message,
-    });
-  }
-});
-
-// Delete mahasiswa
-app.delete("/api/students/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Cek apakah mahasiswa exist
-    const [students] = await pool.query(
-      "SELECT id, name FROM students WHERE id = ?",
-      [id]
-    );
-
-    if (students.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Mahasiswa tidak ditemukan",
-      });
-    }
-
-    // Hapus mahasiswa (attendances akan terhapus otomatis karena ON DELETE CASCADE)
-    await pool.query("DELETE FROM students WHERE id = ?", [id]);
-
-    res.json({
-      success: true,
-      message: `Mahasiswa ${students[0].name} berhasil dihapus`,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Gagal menghapus mahasiswa",
+      message: "Gagal mengambil jadwal hari ini",
       error: error.message,
     });
   }
 });
 
 // ==================== ATTENDANCES ENDPOINTS ====================
-
-// Get semua data absensi hari ini
+// JARVIS MODIFICATION: requireAuth DIHAPUS
 app.get("/api/attendances/today", async (req, res) => {
   try {
     const today = new Date().toISOString().split("T")[0];
     const [attendances] = await pool.query(
       `SELECT 
-        a.id, 
-        a.scan_time, 
-        s.id as student_id,
-        s.name, 
-        s.nim, 
-        s.angkatan,
-        s.rfid_card_id
-       FROM attendances a
-       JOIN students s ON a.student_id = s.id
-       WHERE DATE(a.scan_time) = ?
-       ORDER BY a.scan_time DESC`,
+            a.id, 
+            a.scan_time, 
+            s.name, 
+            s.nim, 
+            s.angkatan,
+            sc.title as course_title
+            FROM attendances a
+            JOIN students s ON a.student_id = s.id
+            LEFT JOIN schedules sc ON a.schedule_code = sc.code
+            WHERE DATE(a.scan_time) = ?
+            ORDER BY a.scan_time DESC`,
       [today]
     );
 
-    res.json({
-      success: true,
-      count: attendances.length,
-      data: attendances,
-    });
+    res.json({ success: true, count: attendances.length, data: attendances });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -416,101 +250,64 @@ app.get("/api/attendances/today", async (req, res) => {
   }
 });
 
-// Get absensi by date range
-app.get("/api/attendances", async (req, res) => {
+// JARVIS MODIFICATION: requireAuth DIHAPUS
+app.get("/api/attendances/session/:scheduleCode", async (req, res) => {
   try {
-    const { startDate, endDate } = req.query;
+    const { scheduleCode } = req.params;
+    const today = new Date().toISOString().split("T")[0];
 
-    let query = `
-      SELECT 
-        a.id, 
-        a.scan_time, 
-        s.id as student_id,
-        s.name, 
-        s.nim, 
-        s.angkatan,
-        s.rfid_card_id
-      FROM attendances a
-      JOIN students s ON a.student_id = s.id
-    `;
-
-    const params = [];
-
-    if (startDate && endDate) {
-      query += " WHERE DATE(a.scan_time) BETWEEN ? AND ?";
-      params.push(startDate, endDate);
-    } else if (startDate) {
-      query += " WHERE DATE(a.scan_time) >= ?";
-      params.push(startDate);
-    } else if (endDate) {
-      query += " WHERE DATE(a.scan_time) <= ?";
-      params.push(endDate);
-    }
-
-    query += " ORDER BY a.scan_time DESC";
-
-    const [attendances] = await pool.query(query, params);
-
-    res.json({
-      success: true,
-      count: attendances.length,
-      data: attendances,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Gagal mengambil data absensi",
-      error: error.message,
-    });
-  }
-});
-
-// Get absensi by student ID
-app.get("/api/attendances/student/:studentId", async (req, res) => {
-  try {
-    const { studentId } = req.params;
-    const [attendances] = await pool.query(
+    const [attended] = await pool.query(
       `SELECT 
-        a.id, 
-        a.scan_time, 
-        s.name, 
-        s.nim, 
-        s.angkatan
-       FROM attendances a
-       JOIN students s ON a.student_id = s.id
-       WHERE a.student_id = ?
-       ORDER BY a.scan_time DESC`,
-      [studentId]
+            a.scan_time, 
+            s.name, 
+            s.nim 
+            FROM attendances a
+            JOIN students s ON a.student_id = s.id
+            WHERE a.schedule_code = ? AND DATE(a.scan_time) = ?
+            ORDER BY a.scan_time ASC`,
+      [scheduleCode, today]
+    );
+
+    const [unattended] = await pool.query(
+      `SELECT
+                name,
+                nim
+            FROM
+                students s
+            WHERE
+                NOT EXISTS (
+                    SELECT 1
+                    FROM attendances a
+                    WHERE a.student_id = s.id
+                      AND a.schedule_code = ?
+                      AND DATE(a.scan_time) = ?
+                )
+            ORDER BY name ASC`,
+      [scheduleCode, today]
     );
 
     res.json({
       success: true,
-      count: attendances.length,
-      data: attendances,
+      data: { attended, unattended },
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Gagal mengambil data absensi mahasiswa",
+      message: "Gagal mengambil data absensi sesi",
       error: error.message,
     });
   }
 });
 
 // ==================== INVALID SCANS ENDPOINTS ====================
-
-// Get data kartu invalid
+// JARVIS MODIFICATION: requireAuth DIHAPUS
 app.get("/api/invalid-scans", async (req, res) => {
   try {
     const [invalidScans] = await pool.query(
-      "SELECT id, card_id, scan_time FROM invalid_scans ORDER BY scan_time DESC LIMIT 100"
+      "SELECT id, card_id, scan_time, status FROM invalid_scans ORDER BY scan_time DESC LIMIT 100"
     );
 
-    res.json({
-      success: true,
-      count: invalidScans.length,
-      data: invalidScans,
-    });
+    res.json({ success: true, count: invalidScans.length, data: invalidScans });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -520,89 +317,45 @@ app.get("/api/invalid-scans", async (req, res) => {
   }
 });
 
-// Delete invalid scan by ID
-app.delete("/api/invalid-scans/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const [result] = await pool.query(
-      "DELETE FROM invalid_scans WHERE id = ?",
-      [id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Data tidak ditemukan",
-      });
-    }
-
-    res.json({
-      success: true,
-      message: "Data invalid scan berhasil dihapus",
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Gagal menghapus data invalid scan",
-      error: error.message,
-    });
-  }
-});
-
-// Clear all invalid scans
-app.delete("/api/invalid-scans", async (req, res) => {
-  try {
-    await pool.query("DELETE FROM invalid_scans");
-
-    res.json({
-      success: true,
-      message: "Semua data invalid scans berhasil dihapus",
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Gagal menghapus data invalid scans",
-      error: error.message,
-    });
-  }
-});
-
 // ==================== STATISTICS ENDPOINTS ====================
-
-// Get statistik umum
+// JARVIS MODIFICATION: requireAuth DIHAPUS
 app.get("/api/statistics", async (req, res) => {
   try {
     const today = new Date().toISOString().split("T")[0];
+    const todayEng = new Date()
+      .toLocaleDateString("en-US", { weekday: "long" })
+      .toUpperCase();
 
-    // Total mahasiswa
     const [totalStudents] = await pool.query(
       "SELECT COUNT(*) as count FROM students"
     );
-
-    // Total absensi hari ini
     const [todayAttendance] = await pool.query(
-      "SELECT COUNT(*) as count FROM attendances WHERE DATE(scan_time) = ?",
+      "SELECT COUNT(DISTINCT student_id) as count FROM attendances WHERE DATE(scan_time) = ?",
       [today]
     );
-
-    // Total invalid scans hari ini
     const [todayInvalidScans] = await pool.query(
       "SELECT COUNT(*) as count FROM invalid_scans WHERE DATE(scan_time) = ?",
       [today]
     );
+    const [totalSchedules] = await pool.query(
+      "SELECT COUNT(*) as count FROM schedules WHERE day_of_week = ?",
+      [todayEng]
+    );
 
-    // Persentase kehadiran hari ini
+    const totalStudentsCount = totalStudents[0].count;
+    const todayAttendanceCount = todayAttendance[0].count;
+
     const attendancePercentage =
-      totalStudents[0].count > 0
-        ? ((todayAttendance[0].count / totalStudents[0].count) * 100).toFixed(2)
+      totalStudentsCount > 0
+        ? ((todayAttendanceCount / totalStudentsCount) * 100).toFixed(2)
         : 0;
 
     res.json({
       success: true,
       data: {
-        totalStudents: totalStudents[0].count,
-        todayAttendance: todayAttendance[0].count,
+        totalStudents: totalStudentsCount,
+        totalSchedules: totalSchedules[0].count,
+        todayAttendance: todayAttendanceCount,
         todayInvalidScans: todayInvalidScans[0].count,
         attendancePercentage: parseFloat(attendancePercentage),
       },
@@ -617,29 +370,10 @@ app.get("/api/statistics", async (req, res) => {
 });
 
 // ==================== UTILITY ENDPOINTS ====================
-
-// Health check endpoint
-app.get("/api/health", (req, res) => {
-  res.json({
-    success: true,
-    message: "Server is running",
-    timestamp: new Date().toISOString(),
-  });
-});
-
-// 404 handler
 app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "Endpoint tidak ditemukan",
-  });
+  res.status(404).json({ success: false, message: "Endpoint tidak ditemukan" });
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 API endpoint: http://localhost:${PORT}/api`);
-  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
 });
