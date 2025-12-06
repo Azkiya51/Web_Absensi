@@ -1,216 +1,277 @@
-const MOCK_USER = {
-  username: 'admin',
-  password: 'admin123',
-  name: 'Admin SAKTI',
-  nim: '123456789'
-};
+// app.js
+const API_BASE_URL = "http://localhost:3000/api";
 
-const MOCK_SCHEDULE = [
-  // 3 Mata Kuliah Awal
-  { title: 'Algoritma dan Struktur Data', start: '08:00', end: '09:40', room: 'B-203', code: 'WIR554221', lecturer: 'Dr. Andi', materialUrl: '#', pin: '1234' },
-  { title: 'Algoritma dan Struktur Data', start: '09:40', end: '11:20', room: 'B-203', code: 'WIR554222', lecturer: 'Dr. Andi', materialUrl: '#', pin: '5678' },
-  { title: 'Algoritma dan Struktur Data', start: '13:00', end: '14:40', room: 'B-203', code: 'WIR554223', lecturer: 'Dr. Andi', materialUrl: '#', pin: '9012' },
-  
-  // 3 Mata Kuliah Tambahan
-  { title: 'Jaringan Komputer', start: '14:40', end: '16:20', room: 'C-301', code: 'TIK611001', lecturer: 'Prof. Budi', materialUrl: '#', pin: '1122' },
-  { title: 'Pemrograman Web Lanjut', start: '16:20', end: '18:00', code: 'TIK611002', lecturer: 'Ibu Citra', materialUrl: '#', pin: '3344' },
-  { title: 'Basis Data', start: '18:30', end: '20:00', room: 'D-402', code: 'TIK611003', lecturer: 'Dr. Dedi', materialUrl: '#', pin: '5566' }
-];
+// --- Helper Functions ---
 
-// DATA MOCK UNTUK STATISTIK DASHBOARD
-const MOCK_STATS = [
-  { label: 'Total Mahasiswa Jurusan', value: 850 },
-  { label: 'Total Mahasiswa Semester Ini', value: 245 },
-  { label: 'Total Kelas Hari Ini', value: MOCK_SCHEDULE.length }
-];
-
-// DATA MOCK UNTUK KARTU INVALID
-const MOCK_INVALID_CARDS = [
-  { date: '2025-12-01', time: '10:05', uid: '0A1B2C3D', status: 'Tidak Terdaftar', action: 'Hapus' },
-  { date: '2025-12-01', time: '11:30', uid: 'F4E5D6C7', status: 'Tidak Terdaftar', action: 'Daftarkan' },
-  { date: '2025-12-02', time: '15:20', uid: '99887766', status: 'Sesi Kadaluarsa', action: 'Hapus' },
-  { date: '2025-12-03', time: '18:10', uid: '11223344', status: 'Tidak Terdaftar', action: 'Daftarkan' },
-  { date: '2025-12-04', time: '09:00', uid: 'AABBCCDD', status: 'Tidak Terdaftar', action: 'Daftarkan' },
-  { date: '2025-12-04', time: '14:15', uid: '1A2B3C4D', status: 'Tidak Terdaftar', action: 'Daftarkan' },
-];
-
-// DATA MOCK: Mahasiswa yang Sudah Absen Hari Ini (Digunakan di Dashboard)
-const MOCK_ATTENDED_STUDENTS = [
-    { nim: '2101001', name: 'Budi Santoso', course: 'Algoritma dan Struktur Data', time: '08:05' },
-    { nim: '2101005', name: 'Siti Aminah', course: 'Algoritma dan Struktur Data', time: '09:50' },
-    { nim: '2101010', name: 'Joko Susilo', course: 'Jaringan Komputer', time: '15:00' },
-    { nim: '2101015', name: 'Dewi Lestari', course: 'Pemrograman Web Lanjut', time: '16:35' },
-];
-
-// DATA MOCK: Absensi berdasarkan Kode Mata Kuliah
-const MOCK_SESSION_ATTENDANCE = {
-    'WIR554221': [
-        { nim: '2101001', name: 'Budi Santoso', time: '08:05' },
-        { nim: '2101002', name: 'Citra Dewi', time: '08:08' },
-        { nim: '2101003', name: 'Eko Handoko', time: '08:15' },
-    ],
-    'WIR554222': [
-        { nim: '2101005', name: 'Siti Aminah', time: '09:50' },
-        { nim: '2101006', name: 'Fandi Kurniawan', time: '09:55' },
-    ],
-    'TIK611001': [
-        { nim: '2101010', name: 'Joko Susilo', time: '15:00' },
-    ],
-    // Lainnya kosong untuk simulasi
-};
-
-// DATA MOCK: Daftar Mahasiswa Penuh (Hanya untuk simulasi, ini akan menentukan siapa yang "Belum Absen")
-const MOCK_ALL_STUDENTS = [
-    { nim: '2101001', name: 'Budi Santoso' },
-    { nim: '2101002', name: 'Citra Dewi' },
-    { nim: '2101003', name: 'Eko Handoko' },
-    { nim: '2101004', name: 'Fajar Maulana' },
-    { nim: '2101005', name: 'Siti Aminah' },
-    { nim: '2101006', name: 'Fandi Kurniawan' },
-    { nim: '2101007', name: 'Gita Pratiwi' },
-    { nim: '2101008', name: 'Hadi Wijaya' },
-    { nim: '2101009', name: 'Indah Permata' },
-    { nim: '2101010', name: 'Joko Susilo' },
-    { nim: '2101011', name: 'Kiki Amelia' },
-    { nim: '2101012', name: 'Lia Fitriani' },
-    { nim: '2101013', name: 'Maya Sari' },
-    { nim: '2101014', name: 'Naufal Rizki' },
-    { nim: '2101015', name: 'Dewi Lestari' },
-];
-
-
-function toMinutes(hm){
-  const [h,m] = hm.split(':').map(Number);
-  return h*60 + m;
+function toMinutes(hm) {
+  const [h, m] = hm.split(":").map(Number);
+  return h * 60 + m;
 }
 
-function getSessionStatus(start, end, nowMinutes = null){
-  const now = nowMinutes ?? (()=>{const d=new Date(); return d.getHours()*60 + d.getMinutes()})();
-  const s = toMinutes(start), e = toMinutes(end);
-  if (now < s) return 'soon';
-  if (now >= s && now <= e) return 'live';
-  return 'done';
+function getSessionStatus(start, end) {
+  const d = new Date();
+  const nowMinutes = d.getHours() * 60 + d.getMinutes();
+  const s = toMinutes(start),
+    e = toMinutes(end);
+  if (nowMinutes < s) return "soon";
+  if (nowMinutes >= s && nowMinutes <= e) return "live";
+  return "done";
 }
 
-function getCurrentSession(){
-  const now = new Date();
-  const nowMin = now.getHours()*60 + now.getMinutes();
-  return MOCK_SCHEDULE.find(s => {
-    const st = toMinutes(s.start), en = toMinutes(s.end);
-    return nowMin >= st && nowMin <= en;
-  }) || null;
+// =================================================================
+// JARVIS: FUNGSI OTORISASI DIHAPUS, DIGANTI FETCH BIASA
+// =================================================================
+
+// --- Auth Functions (Menggunakan API) ---
+
+function isLoggedIn() {
+  return !!localStorage.getItem("token");
 }
 
+async function login(username, password) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
 
-function isLoggedIn(){
-  return !!localStorage.getItem('session');
-}
-function login(username, password){
-  if (username === MOCK_USER.username && password === MOCK_USER.password){
-    localStorage.setItem('session', JSON.stringify(MOCK_USER));
-    return true;
+    const data = await response.json();
+
+    if (data.success) {
+      localStorage.setItem("token", data.data.token);
+      localStorage.setItem("user", JSON.stringify(data.data));
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error("Login API Error:", error);
+    return false;
   }
-  return false;
 }
-function logout(){
-  localStorage.removeItem('session');
-  location.hash = '#login';
+
+function logout() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  location.hash = "#login";
   render();
 }
 
-function renderHeader(){
+// --- Rendering Functions ---
+
+function renderHeader() {
   if (!isLoggedIn()) return;
-  const user = JSON.parse(localStorage.getItem('session'));
-  const nameEl = document.getElementById('profileNameHeader');
-  const avatarEl = document.getElementById('avatarHeader');
-  if (nameEl) nameEl.textContent = user.name;
-  if (avatarEl) avatarEl.textContent = (user.name.split(' ').map(w=>w[0]).join('')).slice(0,2).toUpperCase();
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const nameEl = document.getElementById("profileNameHeader");
+  const avatarEl = document.getElementById("avatarHeader");
+  if (nameEl) nameEl.textContent = user.name || "Admin SAKTI";
+  if (avatarEl)
+    avatarEl.textContent = (
+      user.name
+        ?.split(" ")
+        .map((w) => w[0])
+        .join("") || "AM"
+    )
+      .slice(0, 2)
+      .toUpperCase();
 }
 
-function renderAppShell(){
-  const appView = document.getElementById('appView');
-  const loginView = document.getElementById('loginView');
+function renderAppShell() {
+  const appView = document.getElementById("appView");
+  const loginView = document.getElementById("loginView");
   if (!appView || !loginView) return;
 
-  if (isLoggedIn()){
-    appView.style.display = 'grid'; // Mengubah dari flex ke grid
-    loginView.style.display = 'none';
+  if (isLoggedIn()) {
+    appView.style.display = "grid";
+    loginView.style.display = "none";
   } else {
-    appView.style.display = 'none';
-    loginView.style.display = 'flex';
+    appView.style.display = "none";
+    loginView.style.display = "flex";
   }
 }
 
-// FUNGSI UNTUK MERENDER DASHBOARD
-function renderDashboard(){
-    const statsTableBody = document.getElementById('statsTableBody');
-    if (statsTableBody) {
-        statsTableBody.innerHTML = '';
-        
-        MOCK_STATS.forEach(stat => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${stat.label}</td>
-                <td style="font-weight:700; text-align:right;">${stat.value}</td>
-            `;
-            statsTableBody.appendChild(row);
-        });
+// --- Dashboard Functions (Menggunakan API) ---
+
+async function renderDashboard() {
+  const statsTableBody = document.getElementById("statsTableBody");
+  const attendedTableBody = document.getElementById("attendedTableBody");
+  const invalidSummaryTableBody = document.getElementById(
+    "invalidSummaryTableBody"
+  ); // Tampilkan loading
+  if (statsTableBody)
+    statsTableBody.innerHTML =
+      '<tr><td colspan="2">Loading Statistik...</td></tr>';
+  if (attendedTableBody)
+    attendedTableBody.innerHTML =
+      '<tr><td colspan="4">Loading Absensi...</td></tr>';
+  if (invalidSummaryTableBody)
+    invalidSummaryTableBody.innerHTML =
+      '<tr><td colspan="3">Loading Log Invalid...</td></tr>';
+  try {
+    // JARVIS: Mengganti authenticatedFetch dengan fetch biasa
+    const [statsResponse, attendedResponse, invalidResponse] =
+      await Promise.all([
+        fetch(`${API_BASE_URL}/statistics`),
+        fetch(`${API_BASE_URL}/attendances/today`),
+        fetch(`${API_BASE_URL}/invalid-scans`),
+      ]);
+
+    // Hanya perlu memeriksa status respons (non-token check)
+    if (!statsResponse.ok || !attendedResponse.ok || !invalidResponse.ok) {
+      // Jika status 404, 500, dll.
+      throw new Error("Respon API tidak sukses: " + statsResponse.status);
     }
 
-    renderAttendedStudents();
-    renderInvalidSummary();
+    const statsData = await statsResponse.json();
+    const attendedData = await attendedResponse.json();
+    const invalidData = await invalidResponse.json();
+
+    renderStatsTable(statsData.data);
+    renderAttendedStudents(attendedData.data);
+    renderInvalidSummary(invalidData.data);
+  } catch (error) {
+    console.error("Error fetching dashboard data:", error);
+    if (statsTableBody)
+      statsTableBody.innerHTML =
+        '<tr><td colspan="2" style="color:red;">Gagal memuat data! (Cek server/DB)</td></tr>';
+  }
 }
 
-// FUNGSI UNTUK MERENDER TABEL MAHASISWA YANG SUDAH ABSEN (Dashboard)
-function renderAttendedStudents() {
-    const tableBody = document.getElementById('attendedTableBody');
-    if (!tableBody) return;
-    tableBody.innerHTML = '';
+function renderStatsTable(stats) {
+  const statsTableBody = document.getElementById("statsTableBody");
+  if (!statsTableBody) return;
+  statsTableBody.innerHTML = "";
+  const formattedStats = [
+    { label: "Total Mahasiswa Terdaftar", value: stats.totalStudents },
+    { label: "Total Kelas Hari Ini", value: stats.totalSchedules },
+    { label: "Mahasiswa Absen Hari Ini (Unik)", value: stats.todayAttendance },
+    {
+      label: "Persentase Kehadiran (Unik)",
+      value: `${stats.attendancePercentage}%`,
+    },
+  ];
+  formattedStats.forEach((stat) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+            <td>${stat.label}</td>
+            <td style="font-weight:700; text-align:right;">${stat.value}</td>
+        `;
+    statsTableBody.appendChild(row);
+  });
+}
 
-    MOCK_ATTENDED_STUDENTS.forEach(student => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
+function renderAttendedStudents(attendedList) {
+  const tableBody = document.getElementById("attendedTableBody");
+  if (!tableBody) return;
+  tableBody.innerHTML = "";
+
+  if (attendedList.length === 0) {
+    tableBody.innerHTML =
+      '<tr><td colspan="4" style="text-align:center; color:#777;">Belum ada absensi tercatat hari ini.</td></tr>';
+    return;
+  }
+
+  attendedList.slice(0, 5).forEach((student) => {
+    const scanTime = new Date(student.scan_time).toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const row = document.createElement("tr");
+    row.innerHTML = `
             <td>${student.nim}</td>
             <td>${student.name}</td>
-            <td style="color:#555;">${student.course}</td>
-            <td style="text-align:right;">${student.time}</td>
+            <td style="color:#555;">${student.course_title || "N/A"}</td>
+            <td style="text-align:right;">${scanTime}</td>
         `;
-        tableBody.appendChild(row);
-    });
+    tableBody.appendChild(row);
+  });
 }
 
-// FUNGSI UNTUK MERENDER RINGKASAN KARTU INVALID (Dashboard)
-function renderInvalidSummary() {
-    const tableBody = document.getElementById('invalidSummaryTableBody');
-    if (!tableBody) return;
-    tableBody.innerHTML = '';
+function renderInvalidSummary(invalidList) {
+  const tableBody = document.getElementById("invalidSummaryTableBody");
+  if (!tableBody) return;
+  tableBody.innerHTML = "";
 
-    const summaryData = MOCK_INVALID_CARDS.slice(-4); 
+  if (invalidList.length === 0) {
+    tableBody.innerHTML =
+      '<tr><td colspan="3" style="text-align:center; color:#777;">Tidak ada log kartu invalid terbaru.</td></tr>';
+    return;
+  }
+  const summaryData = invalidList.slice(0, 4);
 
-    summaryData.forEach(card => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${card.date}</td>
-            <td style="font-weight:600;">${card.uid}</td>
+  summaryData.forEach((card) => {
+    const scanDate = new Date(card.scan_time).toLocaleDateString("id-ID");
+    const row = document.createElement("tr");
+    row.innerHTML = `
+            <td>${scanDate}</td>
+            <td style="font-weight:600;">${card.card_id}</td>
             <td>${card.status}</td>
         `;
-        tableBody.appendChild(row);
-    });
+    tableBody.appendChild(row);
+  });
 }
 
+// --- Masuk Kelas Functions (Menggunakan API) ---
 
-// FUNGSI UNTUK MERENDER JADWAL KE GRID (Digunakan di Masuk Kelas)
-function renderScheduleGrid(){
-  const grid = document.getElementById('scheduleGrid');
+let currentScheduleList = []; // Menyimpan jadwal yang diambil dari API
+
+// FUNGSI BARU: Mengambil jadwal hari ini dari API
+async function fetchSchedule() {
+  try {
+    // JARVIS: Menggunakan fetch biasa
+    const response = await fetch(`${API_BASE_URL}/schedules/today`);
+
+    if (!response.ok) return []; // Cek status respons
+
+    const data = await response.json();
+    if (data.success) {
+      currentScheduleList = data.data;
+      return data.data;
+    }
+    return [];
+  } catch (error) {
+    console.error("Error fetching schedule:", error);
+    return [];
+  }
+}
+
+function getCurrentSession(scheduleList) {
+  const selectedIdx = localStorage.getItem("currentSessionIdx");
+  if (selectedIdx !== null && scheduleList[parseInt(selectedIdx, 10)]) {
+    return scheduleList[parseInt(selectedIdx, 10)];
+  } // Default: Sesi yang sedang live
+  const liveSession = scheduleList.find(
+    (s) => getSessionStatus(s.start_time, s.end_time) === "live"
+  );
+  if (liveSession) return liveSession;
+
+  return scheduleList[0] || null; // Ambil sesi pertama jika tidak ada yang live
+}
+
+async function renderScheduleGrid() {
+  const grid = document.getElementById("scheduleGrid");
   if (!grid) return;
-  grid.innerHTML = '';
-  MOCK_SCHEDULE.forEach((s, idx) => {
-    const status = getSessionStatus(s.start, s.end);
-    const chipClass = status === 'live' ? 'success' : status === 'soon' ? 'soon' : 'done';
-    const chipText = status === 'live' ? 'Berlangsung' : status === 'soon' ? 'Belum Mulai' : 'Selesai';
-
-    const card = document.createElement('div');
-    card.className = 'card';
+  grid.innerHTML = "Loading jadwal...";
+  const scheduleList = await fetchSchedule();
+  grid.innerHTML = ""; // Clear loading
+  if (scheduleList.length === 0) {
+    grid.innerHTML =
+      '<div style="color:#777; text-align:center; padding: 20px;">Tidak ada jadwal hari ini.</div>';
+    return;
+  }
+  scheduleList.forEach((s, idx) => {
+    const status = getSessionStatus(s.start_time, s.end_time);
+    const chipClass =
+      status === "live" ? "success" : status === "soon" ? "soon" : "done";
+    const chipText =
+      status === "live"
+        ? "Berlangsung"
+        : status === "soon"
+        ? "Belum Mulai"
+        : "Selesai";
+    const card = document.createElement("div");
+    card.className = "card";
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
         <div>
@@ -220,8 +281,8 @@ function renderScheduleGrid(){
         <div class="chip ${chipClass}">• ${chipText}</div>
       </div>
       <div class="meta-row">
-        <div>🕒 ${s.start} - ${s.end}</div>
-        <div>📍 ${s.room}</div>
+        <div>🕒 ${s.start_time} - ${s.end_time}</div>
+        <div>📍 ${s.room || "N/A"}</div>
         <div>🏷️ ${s.code}</div>
       </div>
       <div class="actions">
@@ -231,67 +292,105 @@ function renderScheduleGrid(){
     grid.appendChild(card);
   });
 
-  grid.querySelectorAll('button').forEach(btn=>{
-    btn.addEventListener('click', (e)=>{
-      const idx = parseInt(e.currentTarget.dataset.idx,10);
-      const action = e.currentTarget.dataset.action;
-      if (action === 'pilih'){
-        // Ketika tombol "PILIH SESI" diklik, ubah sesi yang sedang dilihat dan render ulang
-        localStorage.setItem('currentSessionIdx', String(idx));
-        renderMasukKelas(); 
-      }
+  grid.querySelectorAll("button").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const idx = parseInt(e.currentTarget.dataset.idx, 10);
+      localStorage.setItem("currentSessionIdx", String(idx));
+      renderMasukKelas();
     });
   });
 }
 
-// FUNGSI BARU UNTUK MERENDER TABEL KEHADIRAN SESI (Sudah & Belum Absen)
-function renderAttendanceList(sessionCode) {
-    const tableContainer = document.getElementById('sessionAttendanceContainer');
-    if (!tableContainer) return;
-    
-    // 1. Ambil data yang sudah absen (Attended)
-    const attendedList = MOCK_SESSION_ATTENDANCE[sessionCode] || [];
-    const attendedNims = new Set(attendedList.map(s => s.nim));
+async function renderAttendanceList(sessionCode) {
+  const tableContainer = document.getElementById("sessionAttendanceContainer");
+  if (!tableContainer) return;
+  tableContainer.innerHTML =
+    '<div style="text-align:center; padding: 20px;">Memuat daftar kehadiran...</div>';
+  try {
+    // Jika mock data dihapus, ganti dengan fetch biasa
+    /*
+    const response = await fetch(`${API_BASE_URL}/attendances/session/${sessionCode}`);
+    if (!response.ok) throw new Error("Gagal mengambil data absensi.");
+    const data = await response.json();
+    const attendedList = data.data.attended; 
+    const unattendedList = data.data.unattended; 
+    */
 
-    // 2. Tentukan yang belum absen (Unattended)
-    const unattendedList = MOCK_ALL_STUDENTS.filter(student => !attendedNims.has(student.nim));
-    
+    // **********************************************
+    // MENGGUNAKAN DATA MOCK (TIDAK DIUBAH)
+    // **********************************************
+
+    const mockAttended = [
+      { nim: "101", name: "Budi Santoso", scan_time: new Date().toISOString() },
+      {
+        nim: "102",
+        name: "Citra Dewi",
+        scan_time: new Date(Date.now() - 60000).toISOString(),
+      },
+      {
+        nim: "103",
+        name: "Agus Pratama",
+        scan_time: new Date(Date.now() - 120000).toISOString(),
+      },
+    ];
+
+    const mockUnattended = [
+      { nim: "104", name: "Dina Amelia" },
+      { nim: "105", name: "Eko Wahyu" },
+      { nim: "106", name: "Fifi Lestari" },
+    ];
+
+    const attendedList = mockAttended;
+    const unattendedList = mockUnattended;
+    // **********************************************
+
     let tableHtml = `
-        <div class="card" style="margin-top: 20px;">
-            <h3>Daftar Kehadiran Sesi (${attendedList.length} Hadir / ${unattendedList.length} Belum Hadir)</h3>
-            
-            <table class="data-table" style="width:100%; margin-top: 15px;">
-                <thead>
-                    <tr style="border-bottom: 2px solid var(--border)">
-                        <th style="padding: 10px 0; text-align: left;">NIM</th>
-                        <th style="padding: 10px 0; text-align: left;">Nama Mahasiswa</th>
-                        <th style="padding: 10px 0; text-align: right;">Status</th>
-                        <th style="padding: 10px 0; text-align: right;">Waktu Absen</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-    
-    // 3. Gabungkan dan Render (Hadiri di atas, Belum Hadir di bawah)
+            <div class="card" style="margin-top: 20px;">
+                <h3>Daftar Kehadiran Sesi (${attendedList.length} Hadir / ${unattendedList.length} Belum Hadir)</h3>
+                
+                <table class="data-table" style="width:100%; margin-top: 15px;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border)">
+                            <th style="padding: 10px 0; text-align: left;">NIM</th>
+                            <th style="padding: 10px 0; text-align: left;">Nama Mahasiswa</th>
+                            <th style="padding: 10px 0; text-align: right;">Status</th>
+                            <th style="padding: 10px 0; text-align: right;">Waktu Absen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
     const combinedList = [
-        ...attendedList.map(s => ({ ...s, status: 'Hadir', time: s.time, style: 'color: #1d7a32; font-weight: 600;' })),
-        ...unattendedList.map(s => ({ ...s, status: 'Belum Hadir', time: '-', style: 'color: #9b1c1c;' }))
+      ...attendedList.map((s) => ({
+        ...s,
+        status: "Hadir",
+        time: new Date(s.scan_time).toLocaleTimeString("id-ID", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        style: "color: #1d7a32; font-weight: 600;",
+      })),
+      ...unattendedList.map((s) => ({
+        ...s,
+        status: "Belum Hadir",
+        time: "-",
+        style: "color: #9b1c1c;",
+      })),
     ];
 
     if (combinedList.length === 0) {
-        tableHtml += `<tr><td colspan="4" style="text-align: center; color: #777;">Tidak ada mahasiswa terdaftar untuk sesi ini.</td></tr>`;
+      tableHtml += `<tr><td colspan="4" style="text-align: center; color: #777;">Tidak ada mahasiswa terdaftar untuk sesi ini.</td></tr>`;
     } else {
-        combinedList.sort((a, b) => a.status.localeCompare(b.status)); // Urutkan Hadir/Belum Hadir
-        combinedList.forEach(student => {
-            tableHtml += `
-                <tr style="${student.style}">
-                    <td>${student.nim}</td>
-                    <td>${student.name}</td>
-                    <td style="text-align:right;">${student.status}</td>
-                    <td style="text-align:right;">${student.time}</td>
-                </tr>
-            `;
-        });
+      combinedList.sort((a, b) => a.status.localeCompare(b.status));
+      combinedList.forEach((student) => {
+        tableHtml += `
+                        <tr style="${student.style}">
+                            <td>${student.nim}</td>
+                                <td>${student.name}</td>
+                                <td style="text-align:right;">${student.status}</td>
+                            <td style="text-align:right;">${student.time}</td>
+                        </tr>
+                    `;
+      });
     }
 
     tableHtml += `
@@ -299,231 +398,249 @@ function renderAttendanceList(sessionCode) {
             </table>
         </div>
     `;
-
     tableContainer.innerHTML = tableHtml;
-}
-
-
-// FUNGSI UNTUK MERENDER KARTU INVALID
-function renderKartuInvalid(){
-  const tableBody = document.getElementById('invalidTableBody');
-  if (!tableBody) return;
-  tableBody.innerHTML = '';
-  
-  MOCK_INVALID_CARDS.forEach(card => {
-      const isDaftarkan = card.action === 'Daftarkan';
-      const buttonClass = isDaftarkan ? '' : 'danger';
-      const row = document.createElement('tr');
-      row.innerHTML = `
-          <td style="color:#555;">${card.date}</td>
-          <td>${card.time}</td>
-          <td style="font-weight:600;">${card.uid}</td>
-          <td>${card.status}</td>
-          <td style="text-align: center;">
-              <button class="btn-action ${buttonClass}" data-action="${card.action.toLowerCase()}" data-uid="${card.uid}">
-                  ${card.action}
-              </button>
-          </td>
-      `;
-      tableBody.appendChild(row);
-  });
-  
-  // Tambahkan listener untuk tombol Action
-  tableBody.querySelectorAll('.btn-action').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-          const uid = e.currentTarget.dataset.uid;
-          const action = e.currentTarget.dataset.action;
-          alert(`Action: ${action.toUpperCase()} UID ${uid}`);
-          // Di aplikasi nyata, ini akan memicu modal atau API call
-      });
-  });
-}
-
-function renderRoute(){
-  const route = location.hash || (isLoggedIn() ? '#dashboard' : '#login');
-
-  const dash = document.getElementById('dashboardPage');
-  const mk = document.getElementById('masukKelasPage');
-  const ki = document.getElementById('kartuInvalidPage');
-  if (dash) dash.style.display = 'none';
-  if (mk) mk.style.display = 'none';
-  if (ki) ki.style.display = 'none';
-
-  // Logika untuk menandai tombol navigasi yang aktif
-  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-
-  if (route.startsWith('#dashboard')){
-    if (dash){ 
-        dash.style.display = 'block'; 
-        renderDashboard(); 
-        document.getElementById('navDashboard')?.classList.add('active');
-    }
-  } else if (route.startsWith('#masuk-kelas')){
-    if (mk){ 
-        mk.style.display = 'block'; 
-        renderMasukKelas(); 
-        document.getElementById('navMasukKelas')?.classList.add('active');
-    }
-  } else if (route.startsWith('#kartu-invalid')){ 
-    if (ki){
-        ki.style.display = 'block';
-        renderKartuInvalid(); 
-        document.getElementById('navKartuInvalid')?.classList.add('active');
-    }
+  } catch (error) {
+    console.error("Error fetching attendance list:", error);
+    tableContainer.innerHTML =
+      '<div style="text-align:center; padding: 20px; color:red;">Gagal memuat daftar kehadiran.</div>';
   }
 }
 
-// FUNGSI UNTUK LOGIKA DOSEN (LIHAT DAFTAR HADIR)
-function renderMasukKelas(){
-  const selectedIdx = localStorage.getItem('currentSessionIdx');
-  let session = null;
-  if (selectedIdx !== null && MOCK_SCHEDULE[parseInt(selectedIdx,10)]){
-    session = MOCK_SCHEDULE[parseInt(selectedIdx,10)];
-  } else {
-    session = getCurrentSession() || MOCK_SCHEDULE[0];
-  }
-  
-  if (!session) return;
+async function renderMasukKelas() {
+  const scheduleList =
+    currentScheduleList.length > 0
+      ? currentScheduleList
+      : await fetchSchedule(); // 1. Tentukan sesi yang sedang dipilih/live
+  const session = getCurrentSession(scheduleList);
 
+  const titleEl = document.getElementById("mkTitle");
+  const subEl = document.getElementById("mkSubtitle");
+  const timeEl = document.getElementById("mkTime");
+  const roomEl = document.getElementById("mkRoom");
+  const codeEl = document.getElementById("mkCode");
+  const attEl = document.getElementById("mkAttendance");
+  const btn = document.getElementById("btnMasukKelas");
+  const container = document.getElementById("sessionAttendanceContainer");
+  const ok = document.getElementById("mkStatusBanner");
+  const err = document.getElementById("mkErrorBanner"); // Reset
 
-  const titleEl = document.getElementById('mkTitle');
-  const subEl = document.getElementById('mkSubtitle');
-  const timeEl = document.getElementById('mkTime');
-  const roomEl = document.getElementById('mkRoom');
-  const codeEl = document.getElementById('mkCode');
-  
+  if (ok) ok.style.display = "none";
+  if (err) err.style.display = "none";
+  if (container) container.innerHTML = "";
+  if (btn) btn.disabled = true;
+
+  if (!session) {
+    if (titleEl) titleEl.textContent = "Tidak Ada Sesi Terpilih";
+    if (subEl) subEl.textContent = "Silakan pilih sesi dari daftar di bawah.";
+    if (timeEl) timeEl.textContent = "N/A";
+    if (roomEl) roomEl.textContent = "N/A";
+    if (codeEl) codeEl.textContent = "N/A";
+    if (attEl) attEl.textContent = "Status Sesi: Idle";
+    renderScheduleGrid(); // Pastikan jadwal dirender
+    return;
+  } // 2. Isi detail sesi
+
   if (titleEl) titleEl.textContent = session.title;
   if (subEl) subEl.textContent = `Dosen: ${session.lecturer}`;
-  if (timeEl) timeEl.textContent = `${session.start} - ${session.end}`;
-  if (roomEl) roomEl.textContent = `Ruang ${session.room}`;
-  if (codeEl) codeEl.textContent = session.code;
+  if (timeEl)
+    timeEl.textContent = `${session.start_time} - ${session.end_time}`;
+  if (roomEl) roomEl.textContent = `Ruang ${session.room || "N/A"}`;
+  if (codeEl) codeEl.textContent = session.code; // 3. Tentukan status sesi dan tampilkan banner
 
-  // Cek apakah daftar hadir sedang ditampilkan
-  const isListOpen = document.getElementById('sessionAttendanceContainer')?.innerHTML.includes('Daftar Kehadiran Sesi');
+  const statusClass = getSessionStatus(session.start_time, session.end_time);
+  const isListOpen = btn?.textContent === "SEMBUNYIKAN DAFTAR HADIR";
+  if (attEl)
+    attEl.textContent = `Status Sesi: ${
+      statusClass === "live"
+        ? "Berlangsung"
+        : statusClass === "soon"
+        ? "Belum Mulai"
+        : "Selesai"
+    }`;
 
-  const attEl = document.getElementById('mkAttendance');
-  // Atur status attendance menjadi status kelas (Live/Soon/Done)
-  const statusClass = getSessionStatus(session.start, session.end);
-  attEl.textContent = `Status Sesi: ${statusClass === 'live' ? 'Berlangsung' : statusClass === 'soon' ? 'Belum Mulai' : 'Selesai'}`;
-
-
-  const ok = document.getElementById('mkStatusBanner');
-  const err = document.getElementById('mkErrorBanner');
-  if (ok) ok.style.display = 'none';
-  if (err) err.style.display = 'none';
-
-  const btn = document.getElementById('btnMasukKelas');
-  if (!btn) return;
-  
-  // LOGIKA UNTUK DOSEN
-  btn.disabled = false;
-  btn.textContent = isListOpen ? 'SEMBUNYIKAN DAFTAR HADIR' : 'LIHAT DAFTAR HADIR';
-  
-  // Jika daftar hadir sudah terbuka, tampilkan ulang (untuk update konten)
-  if (isListOpen){
-      renderAttendanceList(session.code);
-  } else {
-      // Sembunyikan jika belum dibuka
-      const container = document.getElementById('sessionAttendanceContainer');
-      if (container) container.innerHTML = '';
-  }
-
-  // LOGIKA ONCLICK BARU
-  btn.onclick = ()=>{
-    const container = document.getElementById('sessionAttendanceContainer');
-    
-    // Jika daftar hadir sedang terbuka, sembunyikan
-    if (btn.textContent === 'SEMBUNYIKAN DAFTAR HADIR'){
-        container.innerHTML = '';
-        btn.textContent = 'LIHAT DAFTAR HADIR';
-        
-        // Sembunyikan semua banner saat menyembunyikan daftar hadir
-        if (ok) ok.style.display = 'none';
-        if (err) err.style.display = 'none';
-        return;
-    }
-
-    // Jika belum terbuka, tampilkan
-    const status = getSessionStatus(session.start, session.end);
-    if (status !== 'live'){
-      if (err){
-        err.textContent = 'Perhatian: Sesi sedang tidak berlangsung. Absensi via kartu RFID tidak aktif.';
-        err.style.display = 'block';
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = isListOpen
+      ? "SEMBUNYIKAN DAFTAR HADIR"
+      : "LIHAT DAFTAR HADIR";
+  } // 4. Logika tombol Lihat/Sembunyikan
+  if (isListOpen) {
+    // Jika sudah terbuka, render ulang daftar hadir (untuk refresh data)
+    renderAttendanceList(session.code);
+    if (statusClass !== "live") {
+      if (err) {
+        err.textContent =
+          "Perhatian: Sesi sedang tidak berlangsung. Absensi via kartu RFID tidak aktif.";
+        err.style.display = "block";
       }
     } else {
-        if (ok){
-            ok.textContent = 'Sesi sedang berlangsung. Kartu RFID aktif untuk absensi.';
-            ok.style.display = 'block';
-        }
+      if (ok) {
+        ok.textContent =
+          "Sesi sedang berlangsung. Kartu RFID aktif untuk absensi. Data daftar hadir akan diperbarui setiap 10 detik.";
+        ok.style.display = "block";
+      }
     }
-    
-    // Panggil fungsi rendering daftar hadir
-    renderAttendanceList(session.code);
-    btn.textContent = 'SEMBUNYIKAN DAFTAR HADIR';
-  };
-  
-  // Panggil fungsi rendering jadwal di sini
+  }
+
+  if (btn) {
+    btn.onclick = () => {
+      if (btn.textContent === "SEMBUNYIKAN DAFTAR HADIR") {
+        container.innerHTML = "";
+        btn.textContent = "LIHAT DAFTAR HADIR";
+        if (ok) ok.style.display = "none";
+        if (err) err.style.display = "none";
+        return;
+      }
+
+      renderAttendanceList(session.code);
+      btn.textContent = "SEMBUNYIKAN DAFTAR HADIR";
+    };
+  }
+
   renderScheduleGrid();
 }
 
+// --- Kartu Invalid Functions (Menggunakan API) ---
 
-function wireLogin(){
-  const loginBtn = document.getElementById('loginBtn');
+async function renderKartuInvalid() {
+  const tableBody = document.getElementById("invalidTableBody");
+  if (!tableBody) return;
+  tableBody.innerHTML =
+    '<tr><td colspan="5" style="text-align:center;">Loading Data...</td></tr>';
+  try {
+    // JARVIS: Menggunakan fetch biasa
+    const response = await fetch(`${API_BASE_URL}/invalid-scans`);
+
+    if (!response.ok) return; // Cek status respons
+
+    const data = await response.json();
+    if (data.success && data.data.length > 0) {
+      tableBody.innerHTML = "";
+
+      data.data.forEach((card) => {
+        const scanTime = new Date(card.scan_time);
+        const datePart = scanTime.toLocaleDateString("id-ID");
+        const timePart = scanTime.toLocaleTimeString("id-ID");
+        const action =
+          card.status === "Tidak Terdaftar" ? "Daftarkan" : "Hapus";
+        const buttonClass =
+          card.status === "Tidak Terdaftar" ? "purple" : "danger";
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+                <td style="color:#555;">${datePart}</td>
+                <td>${timePart}</td>
+                <td style="font-weight:600;">${card.card_id}</td>
+                <td>${card.status}</td>
+                <td style="text-align: center;">
+                    <button class="btn-action ${buttonClass}" data-action="${action.toLowerCase()}" data-uid="${
+          card.card_id
+        }" data-id="${card.id}">
+                        ${action}
+                    </button>
+                </td>
+            `;
+        tableBody.appendChild(row);
+      });
+      tableBody.querySelectorAll(".btn-action").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          const uid = e.currentTarget.dataset.uid;
+          const action = e.currentTarget.dataset.action;
+          alert(
+            `Action: ${action.toUpperCase()} UID ${uid}. (Logika registrasi/hapus akan diterapkan di sini)`
+          );
+        });
+      });
+    } else {
+      tableBody.innerHTML =
+        '<tr><td colspan="5" style="text-align:center; color:#777;">Tidak ada log kartu invalid.</td></tr>';
+    }
+  } catch (error) {
+    console.error("Error fetching invalid scans:", error);
+    tableBody.innerHTML =
+      '<tr><td colspan="5" style="text-align:center; color:red;">Gagal memuat data invalid scans.</td></tr>';
+  }
+}
+
+// --- Init and Router ---
+
+function wireLogin() {
+  const loginBtn = document.getElementById("loginBtn");
   if (!loginBtn) return;
-  loginBtn.addEventListener('click', ()=>{
-    const uEl = document.getElementById('username');
-    const pEl = document.getElementById('password');
-    const u = (uEl?.value || '').trim();
-    const p = (pEl?.value || '').trim();
-    if (login(u, p)){
-      location.hash = '#dashboard';
+  loginBtn.addEventListener("click", async () => {
+    const uEl = document.getElementById("username");
+    const pEl = document.getElementById("password");
+    const u = (uEl?.value || "").trim();
+    const p = (pEl?.value || "").trim();
+
+    loginBtn.textContent = "Memproses...";
+    loginBtn.disabled = true;
+
+    if (await login(u, p)) {
+      location.hash = "#dashboard";
       render();
     } else {
-      alert('Login gagal. Periksa username dan password.');
+      alert("Login gagal. Periksa username dan password.");
+      loginBtn.textContent = "Login";
+      loginBtn.disabled = false;
     }
   });
 }
-function wireNav(){
-  const navDashboard = document.getElementById('navDashboard');
-  const navMasukKelas = document.getElementById('navMasukKelas');
-  const navKartuInvalid = document.getElementById('navKartuInvalid');
-  const logoutBtn = document.getElementById('logoutBtn');
-
-  if (navDashboard){
-    navDashboard.addEventListener('click', ()=>{
-      location.hash = '#dashboard';
-      render();
-    });
-  }
-  if (navMasukKelas){
-    navMasukKelas.addEventListener('click', ()=>{
-      location.hash = '#masuk-kelas';
-      render();
-    });
-  }
-  if (navKartuInvalid){ 
-    navKartuInvalid.addEventListener('click', ()=>{
-      location.hash = '#kartu-invalid';
-      render();
-    });
-  }
-  if (logoutBtn){
-    logoutBtn.addEventListener('click', logout);
+function wireNav() {
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", logout);
   }
 
-  window.addEventListener('hashchange', render);
+  window.addEventListener("hashchange", render);
 }
-function render(){
+
+function renderRoute() {
+  const route = location.hash || (isLoggedIn() ? "#dashboard" : "#login");
+
+  const dash = document.getElementById("dashboardPage");
+  const mk = document.getElementById("masukKelasPage");
+  const ki = document.getElementById("kartuInvalidPage"); // Sembunyikan semua halaman
+  [dash, mk, ki].forEach((el) => (el ? (el.style.display = "none") : null)); // Logika untuk menandai tombol navigasi yang aktif
+
+  document
+    .querySelectorAll(".nav-btn")
+    .forEach((btn) => btn.classList.remove("active"));
+
+  if (route.startsWith("#dashboard")) {
+    if (dash) {
+      dash.style.display = "block";
+      renderDashboard();
+      document.getElementById("navDashboard")?.classList.add("active");
+    }
+  } else if (route.startsWith("#masuk-kelas")) {
+    if (mk) {
+      mk.style.display = "block";
+      renderMasukKelas();
+      document.getElementById("navMasukKelas")?.classList.add("active");
+    }
+  } else if (route.startsWith("#kartu-invalid")) {
+    if (ki) {
+      ki.style.display = "block";
+      renderKartuInvalid();
+      document.getElementById("navKartuInvalid")?.classList.add("active");
+    }
+  }
+}
+
+function render() {
   renderHeader();
   renderAppShell();
-  renderRoute();
+  if (isLoggedIn()) {
+    renderRoute();
+  }
 }
 
-document.addEventListener('DOMContentLoaded', ()=>{
+document.addEventListener("DOMContentLoaded", () => {
   wireLogin();
   wireNav();
-  if (!location.hash){
-    location.hash = isLoggedIn() ? '#dashboard' : '#login';
+  if (!location.hash) {
+    location.hash = isLoggedIn() ? "#dashboard" : "#login";
   }
   render();
 });

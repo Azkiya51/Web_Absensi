@@ -1,179 +1,323 @@
 <!DOCTYPE html>
 <html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SAKTI WEBSITE - Web Absensi Mahasiswa</title>
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
+  <head>
+     
+    <meta charset="UTF-8" />
+     
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+     
+    <title>SAKTI WEBSITE - Web Absensi Mahasiswa</title>
+     
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="loginView" class="center">
+       
+      <div class="laptop">
+           
+        <div class="laptop-screen">
+               
+          <div class="login-box">
+                   
+            <div class="login-avatar">
+                       
+              <div class="avatar-circle"></div>
+                     
+            </div>
 
-<div id="loginView" class="center">
-  <div class="laptop">
-    <div class="laptop-screen">
-      <div class="login-box">
-        <div class="login-avatar">
-          <div class="avatar-circle"></div>
+                   
+            <div class="login-title">SAKTI WEBSITE</div>
+
+                   
+            <div class="input input-username">
+                        <span>👤</span>          
+              <input id="username" type="text" placeholder="Username" />        
+            </div>
+                           
+            <div class="input input-password">
+                        <span>🔒</span>          
+              <input id="password" type="password" placeholder="Password" />    
+                 
+            </div>
+
+                    <button id="loginBtn" class="login-btn">Login</button>
+
+                   
+            <div class="note">
+                        Gunakan username admin, password: admin123        
+            </div>
+                 
+          </div>
+             
         </div>
 
-        <div class="login-title">SAKTI WEBSITE</div>
-
-        <div class="input input-username">
-          <span>👤</span>
-          <input id="username" type="text" placeholder="Username" />
-        </div>
-        
-        <div class="input input-password">
-          <span>🔒</span>
-          <input id="password" type="password" placeholder="Password" />
-        </div>
-
-
-        <button id="loginBtn" class="login-btn">Login</button>
-
-        <div class="note">
-          Gunakan username admin, password: admin123
-        </div>
+           
+        <div class="laptop-base"></div>
+         
       </div>
     </div>
 
-    <div class="laptop-base"></div>
-  </div>
-</div>
-
-
-<div id="appView" class="app" style="display:none;">
-    <header>
+    <div id="appView" class="app" style="display: none">
+         
+      <header>
+               
         <div class="brand">SAKTI <span>WEBSITE</span></div>
+               
         <div class="profile-header">
-            <span id="profileNameHeader">Admin SAKTI</span>
-            <div class="avatar-sm" id="avatarHeader">AM</div>
+                      <span id="profileNameHeader">Admin SAKTI</span>          
+           
+          <div class="avatar-sm" id="avatarHeader">AM</div>
+                 
         </div>
-    </header>
+           
+      </header>
 
-    <div class="app-body">
+         
+      <div class="app-body">
+               
         <aside class="sidebar">
-            <div class="profile">
-                <div class="meta" style="display:none;">
-                    <div class="name" id="profileName">Admin</div>
-                    <div class="id" id="profileId">123456789</div>
-                </div>
+                     
+          <div class="profile">
+                           
+            <div class="meta" style="display: none">
+                                 
+              <div class="name" id="profileName">Admin</div>
+                                 
+              <div class="id" id="profileId">123456789</div>
+                             
             </div>
-            <nav class="nav">
-                <a href="#dashboard" class="nav-btn active" id="navDashboard">Dashboard</a>
-                <a href="#masuk-kelas" class="nav-btn" id="navMasukKelas">Masuk Kelas</a>
-                <a href="#kartu-invalid" class="nav-btn secondary" id="navKartuInvalid">Kartu Invalid</a>
-            </nav>
-            <div class="logout" id="logoutBtn">Log Out</div>
+                       
+          </div>
+                     
+          <nav class="nav">
+                           
+            <a href="#dashboard" class="nav-btn active" id="navDashboard"
+              >Dashboard</a
+            >
+                           
+            <a href="#masuk-kelas" class="nav-btn" id="navMasukKelas"
+              >Masuk Kelas</a
+            >
+                           
+            <a
+              href="#kartu-invalid"
+              class="nav-btn secondary"
+              id="navKartuInvalid"
+              >Kartu Invalid</a
+            >
+                       
+          </nav>
+                     
+          <div class="logout" id="logoutBtn">Log Out</div>
+                 
         </aside>
 
+               
         <main>
-            <section id="dashboardPage" style="display:none;">
-                <h2 class="page-title">Dashboard</h2>
-                
-                <div class="dashboard-grid">
-                
-                    <div class="card" style="margin-bottom: 20px;">
-                        <h3>Statistik Mahasiswa</h3>
-                        <table class="data-table">
-                            <tbody id="statsTableBody">
-                            </tbody>
-                        </table>
-                    </div>
-    
-                    <div class="card">
-                        <h3>Mahasiswa Absen Hari Ini</h3>
-                        <table class="data-table" style="width:100%; margin-top: 15px;">
-                            <thead>
-                                <tr style="border-bottom: 2px solid var(--border)">
-                                    <th style="padding: 10px 0; text-align: left;">NIM</th>
-                                    <th style="padding: 10px 0; text-align: left;">Nama</th>
-                                    <th style="padding: 10px 0; text-align: left;">Mata Kuliah</th>
-                                    <th style="padding: 10px 0; text-align: right;">Waktu</th>
-                                </tr>
-                            </thead>
-                            <tbody id="attendedTableBody">
-                                </tbody>
-                        </table>
-                    </div>
+                     
+          <section id="dashboardPage" style="display: none">
+                           
+            <h2 class="page-title">Dashboard</h2>
+                                           
+            <div class="dashboard-grid">
+                                                 
+              <div class="card" style="margin-bottom: 20px">
+                                       
+                <h3>Statistik Mahasiswa</h3>
+                                       
+                <table class="data-table">
+                                             
+                  <tbody id="statsTableBody">
+                                               
+                  </tbody>
+                                         
+                </table>
+                                   
+              </div>
+                                     
+              <div class="card">
+                                       
+                <h3>Mahasiswa Absen Hari Ini</h3>
+                                       
+                <table class="data-table" style="width: 100%; margin-top: 15px">
+                                             
+                  <thead>
+                                                   
+                    <tr style="border-bottom: 2px solid var(--border)">
+                                                         
+                      <th style="padding: 10px 0; text-align: left">NIM</th>
+                                                         
+                      <th style="padding: 10px 0; text-align: left">Nama</th>
+                                                         
+                      <th style="padding: 10px 0; text-align: left">
+                        Mata Kuliah
+                      </th>
+                                                         
+                      <th style="padding: 10px 0; text-align: right">Waktu</th>
+                                                     
+                    </tr>
+                                               
+                  </thead>
+                                             
+                  <tbody id="attendedTableBody">
+                                                   
+                  </tbody>
+                                         
+                </table>
+                                   
+              </div>
 
+                             
+            </div>
+                                           
+            <div class="card" style="margin-top: 20px">
+                                 
+              <h3>Log Kartu Invalid Terbaru</h3>
+                                 
+              <div class="small" style="margin-bottom: 10px">
+                Untuk detail lebih lanjut, kunjungi menu **Kartu Invalid**.
+              </div>
+                                 
+              <table class="data-table" style="width: 100%">
+                                       
+                <thead>
+                                             
+                  <tr style="border-bottom: 2px solid var(--border)">
+                                                   
+                    <th style="padding: 10px 0; text-align: left">Tanggal</th>
+                                                   
+                    <th style="padding: 10px 0; text-align: left">UID</th>
+                                                   
+                    <th style="padding: 10px 0; text-align: left">Status</th>
+                                               
+                  </tr>
+                                         
+                </thead>
+                                       
+                <tbody id="invalidSummaryTableBody">
+                                             
+                </tbody>
+                                   
+              </table>
+                             
+            </div>
+                                       
+          </section>
+
+                     
+          <section id="masukKelasPage" style="display: none">
+                           
+            <h2 class="page-title">Masuk Kelas</h2>
+                                           
+            <div class="card class-card">
+                                 
+              <div class="class-title" id="mkTitle">...</div>
+                                 
+              <div class="small" id="mkSubtitle">Dosen: ...</div>
+
+                                 
+              <div class="class-info">
+                                       
+                <div class="info-row">🕒 <span id="mkTime">...</span></div>
+                                       
+                <div class="info-row">📍 <span id="mkRoom">...</span></div>
+                                       
+                <div class="info-row">🏷️ <span id="mkCode">...</span></div>
+                                       
+                <div class="info-row">
+                  👤 <span id="mkAttendance">Status: ...</span>
                 </div>
-                
-                <div class="card" style="margin-top: 20px;">
-                    <h3>Log Kartu Invalid Terbaru</h3>
-                    <div class="small" style="margin-bottom: 10px;">Untuk detail lebih lanjut, kunjungi menu **Kartu Invalid**.</div>
-                    <table class="data-table" style="width:100%;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid var(--border)">
-                                <th style="padding: 10px 0; text-align: left;">Tanggal</th>
-                                <th style="padding: 10px 0; text-align: left;">UID</th>
-                                <th style="padding: 10px 0; text-align: left;">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="invalidSummaryTableBody">
-                            </tbody>
-                    </table>
-                </div>
-                
-            </section>
+                                   
+              </div>
 
-            <section id="masukKelasPage" style="display:none;">
-                <h2 class="page-title">Masuk Kelas</h2>
-                
-                <div class="card class-card">
-                    <div class="class-title" id="mkTitle">Algoritma dan Struktur Data</div>
-                    <div class="small" id="mkSubtitle">Dosen: Dr. Andi</div>
+                                 
+              <div class="cta">
+                                       
+                <button class="btn purple" id="btnMasukKelas" disabled>
+                  LIHAT DAFTAR HADIR
+                </button>
+                                   
+              </div>
 
-                    <div class="class-info">
-                        <div class="info-row">🕒 <span id="mkTime">08:00 - 09:40</span></div>
-                        <div class="info-row">📍 <span id="mkRoom">Ruang B-203</span></div>
-                        <div class="info-row">🏷️ <span id="mkCode">WIR554221</span></div>
-                        <div class="info-row">👤 <span id="mkAttendance">Status: Belum Absen</span></div>
-                    </div>
+                                 
+              <div
+                class="status-banner"
+                id="mkStatusBanner"
+                style="display: none"
+              ></div>
+                                 
+              <div
+                class="status-banner error"
+                id="mkErrorBanner"
+                style="display: none"
+              ></div>
+                             
+            </div>
 
-                    <div class="cta">
-                        <button class="btn purple" id="btnMasukKelas">LIHAT DAFTAR HADIR</button>
-                    </div>
+                           
+            <div id="sessionAttendanceContainer">                   </div>
 
-                    <div class="status-banner" id="mkStatusBanner">Anda berhasil masuk kelas. Kehadiran tercatat.</div>
-                    <div class="status-banner error" id="mkErrorBanner">Gagal masuk kelas. Periksa waktu sesi.</div>
-                </div>
+                           
+            <div class="card" style="margin-top: 20px">
+                                 
+              <h3>Jadwal Hari Ini</h3>
+                                 
+              <div class="grid" id="scheduleGrid"></div>
+                             
+            </div>
 
-                <div id="sessionAttendanceContainer">
-                    </div>
+                       
+          </section>
+                                 
+          <section id="kartuInvalidPage" style="display: none">
+                           
+            <h2 class="page-title">Daftar Kartu Invalid</h2>
+                                           
+            <div class="card">
+                                 
+              <h3>Log Kartu Tidak Dikenal</h3>
+                                 
+              <table
+                class="invalid-table"
+                style="width: 100%; border-collapse: collapse; margin-top: 15px"
+              >
+                                       
+                <thead>
+                                             
+                  <tr style="border-bottom: 2px solid var(--border)">
+                                                   
+                    <th style="padding: 10px 5px; text-align: left">Tanggal</th>
+                                                   
+                    <th style="padding: 10px 5px; text-align: left">Jam</th>
+                                                   
+                    <th style="padding: 10px 5px; text-align: left">UID</th>
+                                                   
+                    <th style="padding: 10px 5px; text-align: left">Status</th>
+                                                   
+                    <th style="padding: 10px 5px; text-align: center">
+                      Action
+                    </th>
+                                               
+                  </tr>
+                                         
+                </thead>
+                                       
+                <tbody id="invalidTableBody">
+                                             
+                </tbody>
+                                   
+              </table>
+                             
+            </div>
+                       
+          </section>
 
-                <div class="card" style="margin-top: 20px;">
-                    <h3>Jadwal Hari Ini</h3>
-                    <div class="grid" id="scheduleGrid"></div>
-                </div>
-
-            </section>
-            
-            <section id="kartuInvalidPage" style="display:none;">
-                <h2 class="page-title">Daftar Kartu Invalid</h2>
-                
-                <div class="card">
-                    <h3>Log Kartu Tidak Dikenal</h3>
-                    <table class="invalid-table" style="width:100%; border-collapse: collapse; margin-top: 15px;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid var(--border)">
-                                <th style="padding: 10px 5px; text-align: left;">Tanggal</th>
-                                <th style="padding: 10px 5px; text-align: left;">Jam</th>
-                                <th style="padding: 10px 5px; text-align: left;">UID</th>
-                                <th style="padding: 10px 5px; text-align: left;">Status</th>
-                                <th style="padding: 10px 5px; text-align: center;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="invalidTableBody">
-                            </tbody>
-                    </table>
-                </div>
-            </section>
-
+                 
         </main>
+           
+      </div>
     </div>
-</div>
 
-<script src="app.js"></script>
-</body>
+    <script src="app.js"></script>
+  </body>
 </html>
