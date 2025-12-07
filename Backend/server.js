@@ -11,7 +11,7 @@ const DB_USER = process.env.DB_USER;
 const DB_PASSWORD = process.env.DB_PASSWORD;
 const DB_NAME = process.env.DB_NAME;
 
-// KREDENSIAL ADMIN STATIS (Hanya digunakan untuk LOGIN endpoint)
+// KREDENSIAL ADMIN STATIS
 const STATIC_USERNAME = "admin";
 const STATIC_PASSWORD = "informatikasakti";
 const STATIC_NAME = "Admin SAKTI";
@@ -47,11 +47,10 @@ pool
     process.exit(1);
   });
 
-// ==================== AUTH ENDPOINT (TETAP DIPERLUKAN UNTUK LOGIN) ====================
+// ==================== AUTH ENDPOINT ====================
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { username, password } = req.body;
-
     if (!username || !password) {
       return res
         .status(400)
@@ -62,7 +61,6 @@ app.post("/api/auth/login", async (req, res) => {
     const passwordMatch = password === STATIC_PASSWORD;
 
     if (usernameMatch && passwordMatch) {
-      // Buat Mock Token (Token tetap dibuat, tapi API lain tidak memerlukannya)
       const token = "mock-jwt-token-1-" + new Date().getTime();
       return res.json({
         success: true,
@@ -87,19 +85,62 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
-// ==================== SCAN ENDPOINT ====================
+// ==================== STUDENTS ENDPOINT (BARU) ====================
+// ENDPOINT UNTUK MENYIMPAN MAHASISWA BARU
+app.post("/api/students/register", async (req, res) => {
+  try {
+    const { name, nim, angkatan, rfid_card_id } = req.body;
+
+    if (!name || !nim || !angkatan || !rfid_card_id) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Semua field harus diisi." });
+    }
+
+    // Query untuk menyimpan data mahasiswa baru
+    const [result] = await pool.query(
+      "INSERT INTO students (name, nim, angkatan, rfid_card_id) VALUES (?, ?, ?, ?)",
+      [name, nim, angkatan, rfid_card_id]
+    );
+
+    // Hapus log invalid yang sesuai setelah pendaftaran berhasil
+    await pool.query(
+      "DELETE FROM invalid_scans WHERE card_id = ? AND status = 'Tidak Terdaftar'",
+      [rfid_card_id]
+    );
+
+    res.json({
+      success: true,
+      message: "Mahasiswa berhasil didaftarkan.",
+      data: { id: result.insertId },
+    });
+  } catch (error) {
+    if (error.code === "ER_DUP_ENTRY") {
+      return res
+        .status(409)
+        .json({ success: false, message: "NIM atau RFID ID sudah terdaftar." });
+    }
+    console.error("Registration Error:", error);
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Kesalahan server saat menyimpan mahasiswa.",
+      });
+  }
+});
+
+// ==================== SCAN ENDPOINT (ABSENSI) ====================
 app.post("/api/scan", async (req, res) => {
   // KODE SAMA DENGAN VERSI SEBELUMNYA
   try {
     const { cardId, scheduleCode } = req.body;
-
     if (!cardId || !scheduleCode) {
       return res.status(400).json({
         success: false,
         message: "Card ID dan Schedule Code tidak boleh kosong.",
       });
     }
-
     const [schedule] = await pool.query(
       "SELECT id, title, start_time, end_time FROM schedules WHERE code = ?",
       [scheduleCode]
@@ -112,7 +153,6 @@ app.post("/api/scan", async (req, res) => {
     const session = schedule[0];
     const now = new Date();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
-
     const [startH, startM] = session.start_time.split(":").map(Number);
     const [endH, endM] = session.end_time.split(":").map(Number);
     const startMinutes = startH * 60 + startM;
@@ -128,21 +168,17 @@ app.post("/api/scan", async (req, res) => {
         message: `Sesi ${session.title} tidak aktif saat ini (${session.start_time}-${session.end_time}).`,
       });
     }
-
     const [students] = await pool.query(
       "SELECT id, name, nim, rfid_card_id FROM students WHERE rfid_card_id = ?",
       [cardId]
     );
-
     if (students.length > 0) {
       const student = students[0];
-
       const today = new Date().toISOString().split("T")[0];
       const [existingAttendance] = await pool.query(
         "SELECT id FROM attendances WHERE student_id = ? AND schedule_code = ? AND DATE(scan_time) = ?",
         [student.id, scheduleCode, today]
       );
-
       if (existingAttendance.length > 0) {
         return res.status(200).json({
           success: true,
@@ -151,12 +187,10 @@ app.post("/api/scan", async (req, res) => {
           data: student,
         });
       }
-
       const [result] = await pool.query(
         "INSERT INTO attendances (student_id, schedule_code, scan_time) VALUES (?, ?, NOW())",
         [student.id, scheduleCode]
       );
-
       return res.status(200).json({
         success: true,
         message: `Absensi berhasil! Selamat datang ${student.name} di ${session.title}`,
@@ -171,7 +205,6 @@ app.post("/api/scan", async (req, res) => {
         "INSERT INTO invalid_scans (card_id, scan_time, status) VALUES (?, NOW(), 'Tidak Terdaftar')",
         [cardId]
       );
-
       return res.status(404).json({
         success: false,
         message: "Kartu tidak terdaftar!",
@@ -193,7 +226,6 @@ app.post("/api/scan", async (req, res) => {
 });
 
 // ==================== SCHEDULES ENDPOINTS ====================
-// JARVIS MODIFICATION: requireAuth DIHAPUS
 app.get("/api/schedules/today", async (req, res) => {
   try {
     const todayEng = new Date()
@@ -220,7 +252,6 @@ app.get("/api/schedules/today", async (req, res) => {
 });
 
 // ==================== ATTENDANCES ENDPOINTS ====================
-// JARVIS MODIFICATION: requireAuth DIHAPUS
 app.get("/api/attendances/today", async (req, res) => {
   try {
     const today = new Date().toISOString().split("T")[0];
@@ -250,7 +281,6 @@ app.get("/api/attendances/today", async (req, res) => {
   }
 });
 
-// JARVIS MODIFICATION: requireAuth DIHAPUS
 app.get("/api/attendances/session/:scheduleCode", async (req, res) => {
   try {
     const { scheduleCode } = req.params;
@@ -300,13 +330,11 @@ app.get("/api/attendances/session/:scheduleCode", async (req, res) => {
 });
 
 // ==================== INVALID SCANS ENDPOINTS ====================
-// JARVIS MODIFICATION: requireAuth DIHAPUS
 app.get("/api/invalid-scans", async (req, res) => {
   try {
     const [invalidScans] = await pool.query(
       "SELECT id, card_id, scan_time, status FROM invalid_scans ORDER BY scan_time DESC LIMIT 100"
     );
-
     res.json({ success: true, count: invalidScans.length, data: invalidScans });
   } catch (error) {
     res.status(500).json({
@@ -318,7 +346,6 @@ app.get("/api/invalid-scans", async (req, res) => {
 });
 
 // ==================== STATISTICS ENDPOINTS ====================
-// JARVIS MODIFICATION: requireAuth DIHAPUS
 app.get("/api/statistics", async (req, res) => {
   try {
     const today = new Date().toISOString().split("T")[0];

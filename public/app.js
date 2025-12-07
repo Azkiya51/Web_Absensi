@@ -19,10 +19,112 @@ function getSessionStatus(start, end) {
 }
 
 // =================================================================
-// JARVIS: FUNGSI OTORISASI DIHAPUS, DIGANTI FETCH BIASA
+// JARVIS: LOGIKA PENDAFTARAN MAHASISWA BARU (BARU)
 // =================================================================
 
-// --- Auth Functions (Menggunakan API) ---
+/**
+ * Handler yang dipanggil saat form pendaftaran mahasiswa baru di-submit
+ */
+async function handleNewStudentRegistration(event) {
+  event.preventDefault();
+
+  const form = event.target;
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData.entries());
+
+  // Pastikan angkatan adalah integer
+  data.angkatan = parseInt(data.angkatan, 10);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/students/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      alert(`Pendaftaran ${data.name} berhasil!`);
+      // Tutup modal
+      document.body.removeChild(document.getElementById("registrationOverlay"));
+      // Refresh halaman Kartu Invalid
+      renderKartuInvalid();
+    } else {
+      alert(`Gagal mendaftar: ${result.message}`);
+    }
+  } catch (error) {
+    console.error("Error submitting student data:", error);
+    alert("Terjadi kesalahan jaringan saat menyimpan data.");
+  }
+}
+
+/**
+ * Menampilkan form input untuk mendaftarkan kartu ID baru
+ */
+function showRegistrationForm(cardId) {
+  let overlay = document.getElementById("registrationOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "registrationOverlay";
+    overlay.className = "modal-overlay"; // Asumsi Anda punya style CSS untuk modal
+    document.body.appendChild(overlay);
+  }
+
+  overlay.innerHTML = `
+        <div class="modal-content">
+            <h3>Pendaftaran Mahasiswa Baru</h3>
+            <div style="margin-bottom: 15px;">ID Kartu RFID: <strong>${cardId}</strong></div>
+            <form id="newStudentForm">
+                <input type="hidden" name="rfid_card_id" value="${cardId}">
+                
+                <div class="form-group">
+                    <label>Nama Mahasiswa:</label>
+                    <input type="text" name="name" required class="input-full">
+                </div>
+                
+                <div class="form-group">
+                    <label>NIM:</label>
+                    <input type="text" name="nim" required class="input-full">
+                </div>
+                
+                <div class="form-group">
+                    <label>Angkatan (Tahun):</label>
+                    <input type="number" name="angkatan" min="2000" max="${new Date().getFullYear()}" required class="input-full">
+                </div>
+
+                <div class="modal-actions" style="margin-top: 20px; display: flex; justify-content: space-between;">
+                    <button type="submit" class="btn purple">SIMPAN DATA</button>
+                    <button type="button" class="btn danger" id="closeModal">Batal</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+  document.getElementById("closeModal").addEventListener("click", () => {
+    document.body.removeChild(overlay);
+  });
+
+  document
+    .getElementById("newStudentForm")
+    .addEventListener("submit", handleNewStudentRegistration);
+
+  // Styling dasar untuk modal agar bisa muncul
+  if (overlay.style) {
+    overlay.style.position = "fixed";
+    overlay.style.top = 0;
+    overlay.style.left = 0;
+    overlay.style.width = "100%";
+    overlay.style.height = "100%";
+    overlay.style.backgroundColor = "rgba(0,0,0,0.6)";
+    overlay.style.display = "flex";
+    overlay.style.justifyContent = "center";
+    overlay.style.alignItems = "center";
+    overlay.style.zIndex = 1000;
+  }
+}
+
+// --- Auth Functions ---
 
 function isLoggedIn() {
   return !!localStorage.getItem("token");
@@ -58,6 +160,7 @@ function logout() {
 }
 
 // --- Rendering Functions ---
+// ... (renderHeader, renderAppShell - TIDAK ADA PERUBAHAN)
 
 function renderHeader() {
   if (!isLoggedIn()) return;
@@ -90,7 +193,7 @@ function renderAppShell() {
   }
 }
 
-// --- Dashboard Functions (Menggunakan API) ---
+// --- Dashboard Functions (fetch biasa diterapkan) ---
 
 async function renderDashboard() {
   const statsTableBody = document.getElementById("statsTableBody");
@@ -108,7 +211,6 @@ async function renderDashboard() {
     invalidSummaryTableBody.innerHTML =
       '<tr><td colspan="3">Loading Log Invalid...</td></tr>';
   try {
-    // JARVIS: Mengganti authenticatedFetch dengan fetch biasa
     const [statsResponse, attendedResponse, invalidResponse] =
       await Promise.all([
         fetch(`${API_BASE_URL}/statistics`),
@@ -116,9 +218,7 @@ async function renderDashboard() {
         fetch(`${API_BASE_URL}/invalid-scans`),
       ]);
 
-    // Hanya perlu memeriksa status respons (non-token check)
     if (!statsResponse.ok || !attendedResponse.ok || !invalidResponse.ok) {
-      // Jika status 404, 500, dll.
       throw new Error("Respon API tidak sukses: " + statsResponse.status);
     }
 
@@ -212,17 +312,15 @@ function renderInvalidSummary(invalidList) {
   });
 }
 
-// --- Masuk Kelas Functions (Menggunakan API) ---
+// --- Masuk Kelas Functions (fetch biasa diterapkan) ---
 
-let currentScheduleList = []; // Menyimpan jadwal yang diambil dari API
+let currentScheduleList = [];
 
-// FUNGSI BARU: Mengambil jadwal hari ini dari API
 async function fetchSchedule() {
   try {
-    // JARVIS: Menggunakan fetch biasa
     const response = await fetch(`${API_BASE_URL}/schedules/today`);
 
-    if (!response.ok) return []; // Cek status respons
+    if (!response.ok) return [];
 
     const data = await response.json();
     if (data.success) {
@@ -240,13 +338,13 @@ function getCurrentSession(scheduleList) {
   const selectedIdx = localStorage.getItem("currentSessionIdx");
   if (selectedIdx !== null && scheduleList[parseInt(selectedIdx, 10)]) {
     return scheduleList[parseInt(selectedIdx, 10)];
-  } // Default: Sesi yang sedang live
+  }
   const liveSession = scheduleList.find(
     (s) => getSessionStatus(s.start_time, s.end_time) === "live"
   );
   if (liveSession) return liveSession;
 
-  return scheduleList[0] || null; // Ambil sesi pertama jika tidak ada yang live
+  return scheduleList[0] || null;
 }
 
 async function renderScheduleGrid() {
@@ -254,7 +352,7 @@ async function renderScheduleGrid() {
   if (!grid) return;
   grid.innerHTML = "Loading jadwal...";
   const scheduleList = await fetchSchedule();
-  grid.innerHTML = ""; // Clear loading
+  grid.innerHTML = "";
   if (scheduleList.length === 0) {
     grid.innerHTML =
       '<div style="color:#777; text-align:center; padding: 20px;">Tidak ada jadwal hari ini.</div>';
@@ -307,15 +405,6 @@ async function renderAttendanceList(sessionCode) {
   tableContainer.innerHTML =
     '<div style="text-align:center; padding: 20px;">Memuat daftar kehadiran...</div>';
   try {
-    // Jika mock data dihapus, ganti dengan fetch biasa
-    /*
-    const response = await fetch(`${API_BASE_URL}/attendances/session/${sessionCode}`);
-    if (!response.ok) throw new Error("Gagal mengambil data absensi.");
-    const data = await response.json();
-    const attendedList = data.data.attended; 
-    const unattendedList = data.data.unattended; 
-    */
-
     // **********************************************
     // MENGGUNAKAN DATA MOCK (TIDAK DIUBAH)
     // **********************************************
@@ -500,7 +589,7 @@ async function renderMasukKelas() {
   renderScheduleGrid();
 }
 
-// --- Kartu Invalid Functions (Menggunakan API) ---
+// --- Kartu Invalid Functions (fetch biasa diterapkan) ---
 
 async function renderKartuInvalid() {
   const tableBody = document.getElementById("invalidTableBody");
@@ -508,10 +597,9 @@ async function renderKartuInvalid() {
   tableBody.innerHTML =
     '<tr><td colspan="5" style="text-align:center;">Loading Data...</td></tr>';
   try {
-    // JARVIS: Menggunakan fetch biasa
     const response = await fetch(`${API_BASE_URL}/invalid-scans`);
 
-    if (!response.ok) return; // Cek status respons
+    if (!response.ok) return;
 
     const data = await response.json();
     if (data.success && data.data.length > 0) {
@@ -542,12 +630,21 @@ async function renderKartuInvalid() {
             `;
         tableBody.appendChild(row);
       });
+
+      // JARVIS MODIFICATION: MENGAKTIFKAN LOGIKA PENDAFTARAN
       tableBody.querySelectorAll(".btn-action").forEach((btn) => {
         btn.addEventListener("click", (e) => {
           const uid = e.currentTarget.dataset.uid;
           const action = e.currentTarget.dataset.action;
+
+          if (action === "daftarkan") {
+            // Membuka modal pendaftaran dengan ID kartu yang dibawa
+            showRegistrationForm(uid);
+            return;
+          }
+
           alert(
-            `Action: ${action.toUpperCase()} UID ${uid}. (Logika registrasi/hapus akan diterapkan di sini)`
+            `Action: ${action.toUpperCase()} UID ${uid}. (Logika hapus akan diterapkan di sini)`
           );
         });
       });
@@ -563,6 +660,7 @@ async function renderKartuInvalid() {
 }
 
 // --- Init and Router ---
+// ... (wireLogin, wireNav, renderRoute, render - TIDAK ADA PERUBAHAN)
 
 function wireLogin() {
   const loginBtn = document.getElementById("loginBtn");
@@ -600,8 +698,8 @@ function renderRoute() {
 
   const dash = document.getElementById("dashboardPage");
   const mk = document.getElementById("masukKelasPage");
-  const ki = document.getElementById("kartuInvalidPage"); // Sembunyikan semua halaman
-  [dash, mk, ki].forEach((el) => (el ? (el.style.display = "none") : null)); // Logika untuk menandai tombol navigasi yang aktif
+  const ki = document.getElementById("kartuInvalidPage");
+  [dash, mk, ki].forEach((el) => (el ? (el.style.display = "none") : null));
 
   document
     .querySelectorAll(".nav-btn")
