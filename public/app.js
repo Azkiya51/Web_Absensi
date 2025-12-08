@@ -342,24 +342,78 @@ function renderInvalidSummary(invalidList) {
   if (!tableBody) return;
   tableBody.innerHTML = "";
 
-  if (invalidList.length === 0) {
+  if (!Array.isArray(invalidList) || invalidList.length === 0) {
     tableBody.innerHTML =
-      '<tr><td colspan="3" style="text-align:center; color:#777;">Tidak ada log kartu invalid terbaru.</td></tr>';
+      '<tr><td colspan="5" style="text-align:center; color:#777;">Tidak ada log kartu invalid terbaru.</td></tr>';
     return;
   }
+
+  // Batasi misalnya 4 data terbaru di dashboard
   const summaryData = invalidList.slice(0, 4);
 
   summaryData.forEach((card) => {
-    const scanDate = new Date(card.scan_time).toLocaleDateString("id-ID");
+    const scanTime = new Date(card.scan_time);
+
+    // Tanggal & jam
+    const datePart = scanTime.toLocaleDateString("id-ID");
+    const timePart = scanTime.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+
+    // Kalau UID / status kosong, pakai '-'
+    const uidText =
+      card.card_id && card.card_id.trim() !== "" ? card.card_id : "-";
+    const statusText =
+      card.status && card.status.trim() !== "" ? card.status : "-";
+
+    const isUnregistered = statusText === "Tidak Terdaftar";
+    const actionText = isUnregistered ? "Daftarkan" : "Hapus";
+    const buttonClass = isUnregistered ? "purple" : "danger";
+
     const row = document.createElement("tr");
     row.innerHTML = `
-                <td>${scanDate}</td>
-                <td style="font-weight:600;">${card.card_id}</td>
-                <td>${card.status}</td>
-            `;
+      <td>${datePart}</td>
+      <td>${timePart}</td>
+      <td style="font-weight:600;">${uidText}</td>
+      <td>${statusText}</td>
+      <td style="text-align:center;">
+        <button
+          class="btn-action-summary ${buttonClass}"
+          data-action="${actionText.toLowerCase()}"
+          data-uid="${uidText}"
+          data-id="${card.id}"
+        >
+          ${actionText}
+        </button>
+      </td>
+    `;
+
     tableBody.appendChild(row);
   });
+
+  // Re-use logika tombol dari tabel Kartu Invalid
+  tableBody.querySelectorAll(".btn-action-summary").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const uid = e.currentTarget.dataset.uid;
+      const action = e.currentTarget.dataset.action;
+      const id = e.currentTarget.dataset.id;
+
+      if (action === "daftarkan") {
+        showRegistrationForm(uid);
+        return;
+      }
+
+      if (action === "hapus") {
+        deleteInvalidScan(id);
+        return;
+      }
+    });
+  });
 }
+
 
 // --- Masuk Kelas Functions ---
 
@@ -662,27 +716,44 @@ async function renderKartuInvalid() {
 
       data.data.forEach((card) => {
         const scanTime = new Date(card.scan_time);
-        const datePart = scanTime.toLocaleDateString("id-ID");
-        const timePart = scanTime.toLocaleTimeString("id-ID");
-        const action =
-          card.status === "Tidak Terdaftar" ? "Daftarkan" : "Hapus";
-        const buttonClass =
-          card.status === "Tidak Terdaftar" ? "purple" : "danger";
 
-        const row = document.createElement("tr");
-        row.innerHTML = `
-                    <td style="color:#555;">${datePart}</td>
-                    <td>${timePart}</td>
-                    <td style="font-weight:600;">${card.card_id}</td>
-                    <td>${card.status}</td>
-                    <td style="text-align: center;">
-                        <button class="btn-action ${buttonClass}" data-action="${action.toLowerCase()}" data-uid="${
-          card.card_id
-        }" data-id="${card.id}">
-                            ${action}
-                        </button>
-                    </td>
-                `;
+// Tanggal & jam
+const datePart = scanTime.toLocaleDateString("id-ID");
+const timePart = scanTime.toLocaleTimeString("id-ID", {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+});
+
+// Kalau UID / status kosong, pakai '-'
+const uidText = card.card_id && card.card_id.trim() !== "" ? card.card_id : "-";
+const statusText = card.status && card.status.trim() !== "" ? card.status : "-";
+
+const isUnregistered = statusText === "Tidak Terdaftar";
+const actionText = isUnregistered ? "Daftarkan" : "Hapus";
+const buttonClass = isUnregistered ? "purple" : "danger";
+
+const row = document.createElement("tr");
+
+// URUTAN: Tanggal | Jam | UID | Status | Action
+row.innerHTML = `
+  <td>${datePart}</td>
+  <td>${timePart}</td>
+  <td style="font-weight:600;">${uidText}</td>
+  <td>${statusText}</td>
+  <td style="text-align:center;">
+    <button
+      class="btn-action ${buttonClass}"
+      data-action="${actionText.toLowerCase()}"
+      data-uid="${uidText}"
+      data-id="${card.id}"
+    >
+      ${actionText}
+    </button>
+  </td>
+`;
+
         tableBody.appendChild(row);
       });
 

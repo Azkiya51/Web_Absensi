@@ -296,47 +296,98 @@ h2{margin:0 0 12px}
 }
 
 
-/* Gaya Tabel Kartu Invalid */
-.invalid-table th {
-    color: var(--text);
-    font-weight: 600;
-    font-size: 14px;
-    background: #f7f7f7;
-    border-bottom: 1px solid var(--border);
+/* =============================
+   TABEL KARTU INVALID (grid penuh)
+============================= */
+
+.invalid-table {
+  width: 100%;
+  border-collapse: collapse;   /* supaya border menyatu */
+  table-layout: fixed;         /* lebar kolom konsisten */
+  font-size: 14px;
 }
 
-.invalid-table td {
-    padding: 10px 5px;
-    border-bottom: 1px dashed var(--border);
-    font-size: 14px;
+/* Header */
+.invalid-table thead th {
+  background: #f7f7f7;
+  color: #222;
+  font-weight: 600;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;   /* garis di semua sisi header */
 }
 
+/* Sel body */
+.invalid-table tbody td {
+  border: 1px solid #f0f0f0;   /* garis di semua sisi sel */
+  padding: 12px 12px;
+  vertical-align: middle;
+  color: #333;
+  background: #fff;
+}
+
+/* Align kolom */
+.invalid-table th:nth-child(1),
+.invalid-table td:nth-child(1) {  /* Tanggal */
+  text-align: left;
+}
+
+.invalid-table th:nth-child(2),
+.invalid-table td:nth-child(2),   /* Jam */
+.invalid-table th:nth-child(3),
+.invalid-table td:nth-child(3),   /* UID */
+.invalid-table th:nth-child(4),
+.invalid-table td:nth-child(4) {  /* Status */
+  text-align: center;
+}
+
+.invalid-table th:nth-child(5),
+.invalid-table td:nth-child(5) {  /* Action */
+  text-align: center;
+}
+
+/* Hover baris */
 .invalid-table tbody tr:hover {
-    background: #fdfdfd;
+  background: #fafafa;
 }
 
+/* Tombol Action */
 .invalid-table .btn-action {
-    display: block;
-    width: auto;
-    padding: 6px 10px;
-    font-size: 12px;
-    border-radius: 6px;
-    background: var(--success);
-    color: var(--text-invert);
-    border: none;
-    cursor: pointer;
-    text-align: center;
+  display: inline-block;
+  padding: 8px 20px;
+  font-size: 13px;
+  border-radius: 8px;
+  background: var(--success);
+  color: var(--text-invert);
+  border: none;
+  cursor: pointer;
 }
+
 .invalid-table .btn-action:hover {
-    background: #258f36;
+  background: #258f36;
 }
-.invalid-table .btn-action.danger{
-    background: var(--danger);
+
+.invalid-table .btn-action.danger {
+  background: var(--danger);
 }
-.invalid-table .btn-action.danger:hover{
-    background: #b53838;
+
+.invalid-table .btn-action.danger:hover {
+  background: #b53838;
 }
-/* End Gaya Tabel Kartu Invalid */
+/* Khusus tabel ringkasan di Dashboard */
+.invalid-table--summary thead th {
+  font-size: 13px;
+  padding: 8px 10px;
+}
+
+.invalid-table--summary tbody td {
+  font-size: 13px;
+  padding: 8px 10px;
+}
+/* Pusatkan teks di semua kolom tabel Kartu Invalid */
+.invalid-table th,
+.invalid-table td {
+  text-align: center !important;
+}
 
 
 /* Center / Login */
