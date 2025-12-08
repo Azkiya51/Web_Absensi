@@ -1,5 +1,14 @@
 // app.js
+
 const API_BASE_URL = "http://localhost:3000/api";
+
+// =================================================================
+// JARVIS: KREDENSIAL STATIS BARU UNTUK LOGIN DI CLIENT-SIDE
+// =================================================================
+const STATIC_USERNAME = "admin";
+const STATIC_PASSWORD = "admin123";
+const STATIC_NAME = "Admin SAKTI";
+// =================================================================
 
 // --- Helper Functions ---
 
@@ -19,7 +28,39 @@ function getSessionStatus(start, end) {
 }
 
 // =================================================================
-// JARVIS: LOGIKA PENDAFTARAN MAHASISWA BARU (BARU)
+// JARVIS: FUNGSI LOGIN DENGAN VERIFIKASI STATIS
+// =================================================================
+
+/**
+ * Melakukan verifikasi login admin secara lokal (statis)
+ */
+async function login(username, password) {
+  // 1. Cek Kredensial secara lokal
+  const usernameMatch = username === STATIC_USERNAME;
+  const passwordMatch = password === STATIC_PASSWORD;
+
+  if (usernameMatch && passwordMatch) {
+    // 2. Jika cocok, buat 'token' mock dan simpan data
+    const token = "mock-client-token-" + new Date().getTime();
+
+    const userData = {
+      token,
+      name: STATIC_NAME,
+      username: STATIC_USERNAME,
+    };
+
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(userData));
+
+    return true; // Login Berhasil
+  }
+
+  // 3. Jika tidak cocok
+  return false; // Login Gagal
+}
+
+// =================================================================
+// JARVIS: LOGIKA PENDAFTARAN & HAPUS (BARU)
 // =================================================================
 
 /**
@@ -32,7 +73,6 @@ async function handleNewStudentRegistration(event) {
   const formData = new FormData(form);
   const data = Object.fromEntries(formData.entries());
 
-  // Pastikan angkatan adalah integer
   data.angkatan = parseInt(data.angkatan, 10);
 
   try {
@@ -45,10 +85,10 @@ async function handleNewStudentRegistration(event) {
     const result = await response.json();
 
     if (result.success) {
-      alert(`Pendaftaran ${data.name} berhasil!`);
-      // Tutup modal
+      alert(
+        `Pendaftaran ${data.name} berhasil! Log invalid kartu ini telah dihapus.`
+      );
       document.body.removeChild(document.getElementById("registrationOverlay"));
-      // Refresh halaman Kartu Invalid
       renderKartuInvalid();
     } else {
       alert(`Gagal mendaftar: ${result.message}`);
@@ -67,39 +107,39 @@ function showRegistrationForm(cardId) {
   if (!overlay) {
     overlay = document.createElement("div");
     overlay.id = "registrationOverlay";
-    overlay.className = "modal-overlay"; // Asumsi Anda punya style CSS untuk modal
+    overlay.className = "modal-overlay";
     document.body.appendChild(overlay);
   }
 
   overlay.innerHTML = `
-        <div class="modal-content">
-            <h3>Pendaftaran Mahasiswa Baru</h3>
-            <div style="margin-bottom: 15px;">ID Kartu RFID: <strong>${cardId}</strong></div>
-            <form id="newStudentForm">
-                <input type="hidden" name="rfid_card_id" value="${cardId}">
-                
-                <div class="form-group">
-                    <label>Nama Mahasiswa:</label>
-                    <input type="text" name="name" required class="input-full">
-                </div>
-                
-                <div class="form-group">
-                    <label>NIM:</label>
-                    <input type="text" name="nim" required class="input-full">
-                </div>
-                
-                <div class="form-group">
-                    <label>Angkatan (Tahun):</label>
-                    <input type="number" name="angkatan" min="2000" max="${new Date().getFullYear()}" required class="input-full">
-                </div>
+            <div class="modal-content" style="background: white; padding: 25px; border-radius: 8px; max-width: 400px; width: 90%;">
+                <h3>Pendaftaran Mahasiswa Baru</h3>
+                <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #ddd;">ID Kartu RFID: <strong style="color: #333;">${cardId}</strong></div>
+                <form id="newStudentForm">
+                    <input type="hidden" name="rfid_card_id" value="${cardId}">
+                    
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Nama Mahasiswa:</label>
+                        <input type="text" name="name" required style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">NIM:</label>
+                        <input type="text" name="nim" required style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Angkatan (Tahun):</label>
+                        <input type="number" name="angkatan" min="2000" max="${new Date().getFullYear()}" required style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
 
-                <div class="modal-actions" style="margin-top: 20px; display: flex; justify-content: space-between;">
-                    <button type="submit" class="btn purple">SIMPAN DATA</button>
-                    <button type="button" class="btn danger" id="closeModal">Batal</button>
-                </div>
-            </form>
-        </div>
-    `;
+                    <div class="modal-actions" style="display: flex; justify-content: space-between;">
+                        <button type="submit" class="btn purple" style="padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; color: white; background-color: #6a1b9a;">SIMPAN DATA</button>
+                        <button type="button" class="btn danger" id="closeModal" style="padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; color: white; background-color: #d32f2f;">Batal</button>
+                    </div>
+                </form>
+            </div>
+        `;
 
   document.getElementById("closeModal").addEventListener("click", () => {
     document.body.removeChild(overlay);
@@ -109,7 +149,6 @@ function showRegistrationForm(cardId) {
     .getElementById("newStudentForm")
     .addEventListener("submit", handleNewStudentRegistration);
 
-  // Styling dasar untuk modal agar bisa muncul
   if (overlay.style) {
     overlay.style.position = "fixed";
     overlay.style.top = 0;
@@ -124,33 +163,44 @@ function showRegistrationForm(cardId) {
   }
 }
 
+/**
+ * Menghapus log invalid dari database
+ */
+async function deleteInvalidScan(id) {
+  if (
+    !confirm(
+      `Apakah Anda yakin ingin menghapus log invalid ID ${id}? Aksi ini permanen.`
+    )
+  ) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/invalid-scans/${id}`, {
+      method: "DELETE",
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      alert(result.message);
+      renderKartuInvalid();
+    } else {
+      alert(`Gagal menghapus: ${result.message}`);
+    }
+  } catch (error) {
+    console.error("Error deleting scan:", error);
+    alert("Terjadi kesalahan jaringan saat menghapus data.");
+  }
+}
+
 // --- Auth Functions ---
 
 function isLoggedIn() {
   return !!localStorage.getItem("token");
 }
 
-async function login(username, password) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-
-    const data = await response.json();
-
-    if (data.success) {
-      localStorage.setItem("token", data.data.token);
-      localStorage.setItem("user", JSON.stringify(data.data));
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error("Login API Error:", error);
-    return false;
-  }
-}
+// Fungsi login(username, password) berada di atas dan sudah dimodifikasi
 
 function logout() {
   localStorage.removeItem("token");
@@ -160,7 +210,6 @@ function logout() {
 }
 
 // --- Rendering Functions ---
-// ... (renderHeader, renderAppShell - TIDAK ADA PERUBAHAN)
 
 function renderHeader() {
   if (!isLoggedIn()) return;
@@ -193,14 +242,14 @@ function renderAppShell() {
   }
 }
 
-// --- Dashboard Functions (fetch biasa diterapkan) ---
+// --- Dashboard Functions ---
 
 async function renderDashboard() {
   const statsTableBody = document.getElementById("statsTableBody");
   const attendedTableBody = document.getElementById("attendedTableBody");
   const invalidSummaryTableBody = document.getElementById(
     "invalidSummaryTableBody"
-  ); // Tampilkan loading
+  );
   if (statsTableBody)
     statsTableBody.innerHTML =
       '<tr><td colspan="2">Loading Statistik...</td></tr>';
@@ -253,9 +302,9 @@ function renderStatsTable(stats) {
   formattedStats.forEach((stat) => {
     const row = document.createElement("tr");
     row.innerHTML = `
-            <td>${stat.label}</td>
-            <td style="font-weight:700; text-align:right;">${stat.value}</td>
-        `;
+                <td>${stat.label}</td>
+                <td style="font-weight:700; text-align:right;">${stat.value}</td>
+            `;
     statsTableBody.appendChild(row);
   });
 }
@@ -279,11 +328,11 @@ function renderAttendedStudents(attendedList) {
 
     const row = document.createElement("tr");
     row.innerHTML = `
-            <td>${student.nim}</td>
-            <td>${student.name}</td>
-            <td style="color:#555;">${student.course_title || "N/A"}</td>
-            <td style="text-align:right;">${scanTime}</td>
-        `;
+                <td>${student.nim}</td>
+                <td>${student.name}</td>
+                <td style="color:#555;">${student.course_title || "N/A"}</td>
+                <td style="text-align:right;">${scanTime}</td>
+            `;
     tableBody.appendChild(row);
   });
 }
@@ -304,15 +353,15 @@ function renderInvalidSummary(invalidList) {
     const scanDate = new Date(card.scan_time).toLocaleDateString("id-ID");
     const row = document.createElement("tr");
     row.innerHTML = `
-            <td>${scanDate}</td>
-            <td style="font-weight:600;">${card.card_id}</td>
-            <td>${card.status}</td>
-        `;
+                <td>${scanDate}</td>
+                <td style="font-weight:600;">${card.card_id}</td>
+                <td>${card.status}</td>
+            `;
     tableBody.appendChild(row);
   });
 }
 
-// --- Masuk Kelas Functions (fetch biasa diterapkan) ---
+// --- Masuk Kelas Functions ---
 
 let currentScheduleList = [];
 
@@ -371,22 +420,22 @@ async function renderScheduleGrid() {
     const card = document.createElement("div");
     card.className = "card";
     card.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
-        <div>
-          <div style="font-weight:800">${s.title}</div>
-          <div class="small">Dosen: ${s.lecturer}</div>
-        </div>
-        <div class="chip ${chipClass}">• ${chipText}</div>
-      </div>
-      <div class="meta-row">
-        <div>🕒 ${s.start_time} - ${s.end_time}</div>
-        <div>📍 ${s.room || "N/A"}</div>
-        <div>🏷️ ${s.code}</div>
-      </div>
-      <div class="actions">
-        <button class="btn purple" data-idx="${idx}" data-action="pilih">PILIH SESI</button>
-      </div>
-    `;
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+            <div>
+              <div style="font-weight:800">${s.title}</div>
+              <div class="small">Dosen: ${s.lecturer}</div>
+            </div>
+            <div class="chip ${chipClass}">• ${chipText}</div>
+          </div>
+          <div class="meta-row">
+            <div>🕒 ${s.start_time} - ${s.end_time}</div>
+            <div>📍 ${s.room || "N/A"}</div>
+            <div>🏷️ ${s.code}</div>
+          </div>
+          <div class="actions">
+            <button class="btn purple" data-idx="${idx}" data-action="pilih">PILIH SESI</button>
+          </div>
+        `;
     grid.appendChild(card);
   });
 
@@ -406,8 +455,14 @@ async function renderAttendanceList(sessionCode) {
     '<div style="text-align:center; padding: 20px;">Memuat daftar kehadiran...</div>';
   try {
     // **********************************************
-    // MENGGUNAKAN DATA MOCK (TIDAK DIUBAH)
+    // MENGGUNAKAN DATA MOCK (TIDAK DIUBAH) - HARUSNYA PANGGIL API
     // **********************************************
+
+    // Panggil API yang sebenarnya:
+    // const response = await fetch(`${API_BASE_URL}/attendances/session/${sessionCode}`);
+    // const data = await response.json();
+    // const attendedList = data.data.attended;
+    // const unattendedList = data.data.unattended;
 
     const mockAttended = [
       { nim: "101", name: "Budi Santoso", scan_time: new Date().toISOString() },
@@ -434,20 +489,20 @@ async function renderAttendanceList(sessionCode) {
     // **********************************************
 
     let tableHtml = `
-            <div class="card" style="margin-top: 20px;">
-                <h3>Daftar Kehadiran Sesi (${attendedList.length} Hadir / ${unattendedList.length} Belum Hadir)</h3>
-                
-                <table class="data-table" style="width:100%; margin-top: 15px;">
-                    <thead>
-                        <tr style="border-bottom: 2px solid var(--border)">
-                            <th style="padding: 10px 0; text-align: left;">NIM</th>
-                            <th style="padding: 10px 0; text-align: left;">Nama Mahasiswa</th>
-                            <th style="padding: 10px 0; text-align: right;">Status</th>
-                            <th style="padding: 10px 0; text-align: right;">Waktu Absen</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
+                <div class="card" style="margin-top: 20px;">
+                    <h3>Daftar Kehadiran Sesi (${attendedList.length} Hadir / ${unattendedList.length} Belum Hadir)</h3>
+                    
+                    <table class="data-table" style="width:100%; margin-top: 15px;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--border)">
+                                <th style="padding: 10px 0; text-align: left;">NIM</th>
+                                <th style="padding: 10px 0; text-align: left;">Nama Mahasiswa</th>
+                                <th style="padding: 10px 0; text-align: right;">Status</th>
+                                <th style="padding: 10px 0; text-align: right;">Waktu Absen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
     const combinedList = [
       ...attendedList.map((s) => ({
         ...s,
@@ -472,21 +527,21 @@ async function renderAttendanceList(sessionCode) {
       combinedList.sort((a, b) => a.status.localeCompare(b.status));
       combinedList.forEach((student) => {
         tableHtml += `
-                        <tr style="${student.style}">
-                            <td>${student.nim}</td>
-                                <td>${student.name}</td>
-                                <td style="text-align:right;">${student.status}</td>
-                            <td style="text-align:right;">${student.time}</td>
-                        </tr>
-                    `;
+                            <tr style="${student.style}">
+                                <td>${student.nim}</td>
+                                    <td>${student.name}</td>
+                                    <td style="text-align:right;">${student.status}</td>
+                                <td style="text-align:right;">${student.time}</td>
+                            </tr>
+                        `;
       });
     }
 
     tableHtml += `
-                </tbody>
-            </table>
-        </div>
-    `;
+                    </tbody>
+                </table>
+            </div>
+        `;
     tableContainer.innerHTML = tableHtml;
   } catch (error) {
     console.error("Error fetching attendance list:", error);
@@ -589,7 +644,7 @@ async function renderMasukKelas() {
   renderScheduleGrid();
 }
 
-// --- Kartu Invalid Functions (fetch biasa diterapkan) ---
+// --- Kartu Invalid Functions ---
 
 async function renderKartuInvalid() {
   const tableBody = document.getElementById("invalidTableBody");
@@ -616,26 +671,27 @@ async function renderKartuInvalid() {
 
         const row = document.createElement("tr");
         row.innerHTML = `
-                <td style="color:#555;">${datePart}</td>
-                <td>${timePart}</td>
-                <td style="font-weight:600;">${card.card_id}</td>
-                <td>${card.status}</td>
-                <td style="text-align: center;">
-                    <button class="btn-action ${buttonClass}" data-action="${action.toLowerCase()}" data-uid="${
+                    <td style="color:#555;">${datePart}</td>
+                    <td>${timePart}</td>
+                    <td style="font-weight:600;">${card.card_id}</td>
+                    <td>${card.status}</td>
+                    <td style="text-align: center;">
+                        <button class="btn-action ${buttonClass}" data-action="${action.toLowerCase()}" data-uid="${
           card.card_id
         }" data-id="${card.id}">
-                        ${action}
-                    </button>
-                </td>
-            `;
+                            ${action}
+                        </button>
+                    </td>
+                `;
         tableBody.appendChild(row);
       });
 
-      // JARVIS MODIFICATION: MENGAKTIFKAN LOGIKA PENDAFTARAN
+      // JARVIS MODIFICATION: MENGAKTIFKAN LOGIKA PENDAFTARAN/HAPUS
       tableBody.querySelectorAll(".btn-action").forEach((btn) => {
         btn.addEventListener("click", (e) => {
           const uid = e.currentTarget.dataset.uid;
           const action = e.currentTarget.dataset.action;
+          const id = e.currentTarget.dataset.id; // Ambil ID log invalid
 
           if (action === "daftarkan") {
             // Membuka modal pendaftaran dengan ID kartu yang dibawa
@@ -643,9 +699,13 @@ async function renderKartuInvalid() {
             return;
           }
 
-          alert(
-            `Action: ${action.toUpperCase()} UID ${uid}. (Logika hapus akan diterapkan di sini)`
-          );
+          if (action === "hapus") {
+            // Panggil fungsi delete
+            deleteInvalidScan(id);
+            return;
+          }
+
+          alert(`Action: ${action.toUpperCase()} UID ${uid}.`);
         });
       });
     } else {
@@ -660,8 +720,10 @@ async function renderKartuInvalid() {
 }
 
 // --- Init and Router ---
-// ... (wireLogin, wireNav, renderRoute, render - TIDAK ADA PERUBAHAN)
 
+/**
+ * JARVIS MODIFICATION: Menerapkan try/finally untuk memastikan tombol login di-reset
+ */
 function wireLogin() {
   const loginBtn = document.getElementById("loginBtn");
   if (!loginBtn) return;
@@ -674,16 +736,25 @@ function wireLogin() {
     loginBtn.textContent = "Memproses...";
     loginBtn.disabled = true;
 
-    if (await login(u, p)) {
-      location.hash = "#dashboard";
-      render();
-    } else {
-      alert("Login gagal. Periksa username dan password.");
+    try {
+      // Panggilan ke fungsi login yang kini berjalan secara statis/cepat
+      if (await login(u, p)) {
+        location.hash = "#dashboard";
+        render();
+      } else {
+        alert("Login gagal. Periksa username dan password.");
+      }
+    } catch (error) {
+      console.error("Login Handler Error:", error);
+      alert("Terjadi kesalahan tak terduga saat login.");
+    } finally {
+      // Reset tombol dalam semua kasus (sukses, gagal kredensial, gagal jaringan/kesalahan tak terduga)
       loginBtn.textContent = "Login";
       loginBtn.disabled = false;
     }
   });
 }
+
 function wireNav() {
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {

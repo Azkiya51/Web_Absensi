@@ -48,45 +48,44 @@ pool
   });
 
 // ==================== AUTH ENDPOINT ====================
-app.post("/api/auth/login", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    if (!username || !password) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Username dan password diperlukan." });
-    }
+// app.post("/api/auth/login", async (req, res) => {
+//   try {
+//     const { username, password } = req.body;
+//     if (!username || !password) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Username dan password diperlukan." });
+//     }
 
-    const usernameMatch = username === STATIC_USERNAME;
-    const passwordMatch = password === STATIC_PASSWORD;
+//     const usernameMatch = username === STATIC_USERNAME;
+//     const passwordMatch = password === STATIC_PASSWORD;
 
-    if (usernameMatch && passwordMatch) {
-      const token = "mock-jwt-token-1-" + new Date().getTime();
-      return res.json({
-        success: true,
-        message: "Login Berhasil",
-        data: {
-          token,
-          name: STATIC_NAME,
-          username: STATIC_USERNAME,
-        },
-      });
-    } else {
-      return res
-        .status(401)
-        .json({ success: false, message: "Username atau Password salah." });
-    }
-  } catch (error) {
-    console.error("Login Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Terjadi kesalahan server saat login.",
-    });
-  }
-});
+//     if (usernameMatch && passwordMatch) {
+//       const token = "mock-jwt-token-1-" + new Date().getTime();
+//       return res.json({
+//         success: true,
+//         message: "Login Berhasil",
+//         data: {
+//           token,
+//           name: STATIC_NAME,
+//           username: STATIC_USERNAME,
+//         },
+//       });
+//     } else {
+//       return res
+//         .status(401)
+//         .json({ success: false, message: "Username atau Password salah." });
+//     }
+//   } catch (error) {
+//     console.error("Login Error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Terjadi kesalahan server saat login.",
+//     });
+//   }
+// });
 
-// ==================== STUDENTS ENDPOINT (BARU) ====================
-// ENDPOINT UNTUK MENYIMPAN MAHASISWA BARU
+// ==================== STUDENTS ENDPOINT (REGISTRASI BARU) ====================
 app.post("/api/students/register", async (req, res) => {
   try {
     const { name, nim, angkatan, rfid_card_id } = req.body;
@@ -121,18 +120,15 @@ app.post("/api/students/register", async (req, res) => {
         .json({ success: false, message: "NIM atau RFID ID sudah terdaftar." });
     }
     console.error("Registration Error:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Kesalahan server saat menyimpan mahasiswa.",
-      });
+    res.status(500).json({
+      success: false,
+      message: "Kesalahan server saat menyimpan mahasiswa.",
+    });
   }
 });
 
 // ==================== SCAN ENDPOINT (ABSENSI) ====================
 app.post("/api/scan", async (req, res) => {
-  // KODE SAMA DENGAN VERSI SEBELUMNYA
   try {
     const { cardId, scheduleCode } = req.body;
     if (!cardId || !scheduleCode) {
@@ -345,6 +341,39 @@ app.get("/api/invalid-scans", async (req, res) => {
   }
 });
 
+// ENDPOINT BARU: Menghapus log invalid berdasarkan ID
+app.delete("/api/invalid-scans/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res
+        .status(400)
+        .json({ success: false, message: "ID log invalid diperlukan." });
+    }
+
+    const [result] = await pool.query(
+      "DELETE FROM invalid_scans WHERE id = ?",
+      [id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Log invalid tidak ditemukan." });
+    }
+
+    res.json({ success: true, message: "Log invalid berhasil dihapus." });
+  } catch (error) {
+    console.error("Error deleting invalid scan:", error);
+    res.status(500).json({
+      success: false,
+      message: "Gagal menghapus log invalid.",
+      error: error.message,
+    });
+  }
+});
+
 // ==================== STATISTICS ENDPOINTS ====================
 app.get("/api/statistics", async (req, res) => {
   try {
@@ -360,13 +389,15 @@ app.get("/api/statistics", async (req, res) => {
       "SELECT COUNT(DISTINCT student_id) as count FROM attendances WHERE DATE(scan_time) = ?",
       [today]
     );
-    const [todayInvalidScans] = await pool.query(
-      "SELECT COUNT(*) as count FROM invalid_scans WHERE DATE(scan_time) = ?",
-      [today]
-    );
     const [totalSchedules] = await pool.query(
       "SELECT COUNT(*) as count FROM schedules WHERE day_of_week = ?",
       [todayEng]
+    );
+
+    // Memastikan semua variabel dihitung sebelum digunakan
+    const [todayInvalidScans] = await pool.query(
+      "SELECT COUNT(*) as count FROM invalid_scans WHERE DATE(scan_time) = ?",
+      [today]
     );
 
     const totalStudentsCount = totalStudents[0].count;
