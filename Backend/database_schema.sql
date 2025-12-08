@@ -61,13 +61,13 @@ INSERT INTO students (name, nim, angkatan, rfid_card_id) VALUES
 -- Ubah 'SATURDAY' ke hari saat ini jika Anda menguji hari ini!
 INSERT INTO schedules (title, lecturer, room, code, start_time, end_time, day_of_week) VALUES
 ('Teori Bahasa dan Otomata', 'Undang Syaripudin M.Kom.', 'R.4.10', 'WIR554221', '12:40:00', '15:10:00', 'THURSDAY'),
-('Ulumul Hadits', 'Dr. Deden Suparman S.Ag., M.A.', 'Gedung R.3.9', 'TIK611001', '08:40:00', '10:20:00', 'THURSDAY');
-('Algoritm dan Struktur Data', 'Ichsan Taufik ST., M.T', 'R.4.10', 'TIK611001', '14:40:00', '16:20:00', 'MONDAY');
-('Organisasi dan Arsitektur Komputer ', 'Jumadi ST., M.Cs.', 'R.4.12', 'TIK611001', '15:30:00', '18:00:00', 'MONDAY');
-('Ilmu Tauhid ', 'Drs TAMAMI M.Ag', 'R.4.10', 'TIK611001', '08:40:00 ', '110:20:00', 'MONDAY');
-('Aljabar linear', 'Fahrudin Muhtarulloh S.Si., M.Sc', 'R.3.09', 'TIK611001', '07:00', '09:30', 'MONDAY');
-('Logika Komputasional' , 'Eva Nurlatifah M.Sc.' 'R.4.01'IK611001', '12:40:00', ':',12:40:00 'MONDAY');
-('Intelegensia Buatan', 'Jumadi ST., M.Cs', 'R.4.10', 'TIK611001', '12:40:00 ', '15:10:00', 'MONDAY');
+('Ulumul Hadits', 'Dr. Deden Suparman S.Ag., M.A.', 'Gedung R.3.9', 'TIK611001', '08:40:00', '10:20:00', 'THURSDAY'),
+('Algoritm dan Struktur Data', 'Ichsan Taufik ST., M.T', 'R.4.10', 'TIK611001', '14:40:00', '16:20:00', 'MONDAY'),
+('Organisasi dan Arsitektur Komputer ', 'Jumadi ST., M.Cs.', 'R.4.12', 'TIK611001', '15:30:00', '18:00:00', 'MONDAY'),
+('Ilmu Tauhid ', 'Drs TAMAMI M.Ag', 'R.4.10', 'TIK611001', '08:40:00 ', '110:20:00', 'MONDAY'),
+('Aljabar linear', 'Fahrudin Muhtarulloh S.Si., M.Sc', 'R.3.09', 'TIK611001', '07:00', '09:30', 'MONDAY'),
+('Logika Komputasional', 'Eva Nurlatifah M.Sc.', 'R.4.01', 'IK611001', '12:40:00', '12:40:00', 'MONDAY'),
+('Intelegensia Buatan', 'Jumadi ST., M.Cs', 'R.4.10', 'TIK611001', '12:40:00 ', '15:10:00', 'MONDAY'),
 ('Sejarah Peradaban Islam', 'Dr. Gina Giftia Azmiana Delilah', 'R.3.09', 'TIK611001', '08:40:00 ', '10:20:00', 'MONDAY');
 
 INSERT INTO invalid_scans (card_id, status) VALUES
