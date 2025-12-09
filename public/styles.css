@@ -146,8 +146,8 @@ header{
   display:block;
   width:100%;
   padding:12px 14px;
+  border:none; 
   border-radius:10px;
-  border:1px solid #222;
   background:#131316;
   color:#fff;
   font-weight:600;
@@ -163,7 +163,6 @@ header{
 .btn.primary:hover{background:#1a82ff}
 .btn.purple{
   background:var(--primary);
-  border-color:#4c32de;
 }
 .btn.purple:hover{background:var(--primary-hover)}
 .btn-small{
@@ -322,7 +321,7 @@ h2{margin:0 0 12px}
   padding: 12px 12px;
   vertical-align: middle;
   color: #333;
-  background: #fff;
+  background: #f9f9f9; /* <-- Menggunakan warna abu-abu sangat muda */
 }
 
 /* Align kolom */
@@ -617,6 +616,53 @@ h2{margin:0 0 12px}
   border-color:#f1d2d2; 
   /* Mengganti pesan error PIN */
   background:#fff8f8;
+}
+
+/* =============================
+   GAYA MODAL PENDAFTARAN (BARU)
+============================= */
+
+/* Gaya untuk input di dalam modal pendaftaran */
+.registration-modal .form-input {
+  width: 100%;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 15px;
+  color: var(--text);
+  background: #fcfcfc;
+  transition: border-color 0.2s;
+}
+.modal-content.registration-modal {
+    background-color: var(--card); /* background: #ffffff; */
+    color: var(--text); /* memastikan teks tetap hitam */
+}
+
+.registration-modal .form-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(108, 78, 247, 0.2);
+}
+
+.registration-modal h3 {
+    color: var(--text);
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.registration-modal .btn.purple {
+    background: var(--primary);
+    border: none;
+    color: var(--text-invert);
+    font-weight: 700;
+}
+
+.registration-modal .btn.danger {
+    background: var(--danger);
+    border: none;
+    color: var(--text-invert);
+    font-weight: 700;
 }
 
 

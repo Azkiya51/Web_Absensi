@@ -101,6 +101,7 @@ async function handleNewStudentRegistration(event) {
 
 /**
  * Menampilkan form input untuk mendaftarkan kartu ID baru
+ * JARVIS MODIFICATION: Menggunakan class CSS untuk modal content dan input fields.
  */
 function showRegistrationForm(cardId) {
   let overlay = document.getElementById("registrationOverlay");
@@ -111,35 +112,36 @@ function showRegistrationForm(cardId) {
     document.body.appendChild(overlay);
   }
 
+  // Menerapkan class baru untuk modal content
   overlay.innerHTML = `
-            <div class="modal-content" style="background: white; padding: 25px; border-radius: 8px; max-width: 400px; width: 90%;">
-                <h3>Pendaftaran Mahasiswa Baru</h3>
-                <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #ddd;">ID Kartu RFID: <strong style="color: #333;">${cardId}</strong></div>
-                <form id="newStudentForm">
-                    <input type="hidden" name="rfid_card_id" value="${cardId}">
-                    
-                    <div class="form-group" style="margin-bottom: 15px;">
-                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Nama Mahasiswa:</label>
-                        <input type="text" name="name" required style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">
-                    </div>
-                    
-                    <div class="form-group" style="margin-bottom: 15px;">
-                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">NIM:</label>
-                        <input type="text" name="nim" required style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">
-                    </div>
-                    
-                    <div class="form-group" style="margin-bottom: 20px;">
-                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">Angkatan (Tahun):</label>
-                        <input type="number" name="angkatan" min="2000" max="${new Date().getFullYear()}" required style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">
-                    </div>
+        <div class="modal-content registration-modal" style="padding: 25px; border-radius: 8px; max-width: 400px; width: 90%;">
+            <h3>Pendaftaran Mahasiswa Baru</h3>
+            <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #ddd;">ID Kartu RFID: <strong style="color: #333;">${cardId}</strong></div>
+            <form id="newStudentForm">
+                <input type="hidden" name="rfid_card_id" value="${cardId}">
+                
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Nama Mahasiswa:</label>
+                    <input type="text" name="name" required class="form-input" placeholder="Masukkan Nama Lengkap">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">NIM:</label>
+                    <input type="text" name="nim" required class="form-input" placeholder="Masukkan Nomor Induk Mahasiswa">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px;">Angkatan (Tahun):</label>
+                    <input type="number" name="angkatan" min="2000" max="${new Date().getFullYear()}" required class="form-input" placeholder="${new Date().getFullYear()}">
+                </div>
 
-                    <div class="modal-actions" style="display: flex; justify-content: space-between;">
-                        <button type="submit" class="btn purple" style="padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; color: white; background-color: #6a1b9a;">SIMPAN DATA</button>
-                        <button type="button" class="btn danger" id="closeModal" style="padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; color: white; background-color: #d32f2f;">Batal</button>
-                    </div>
-                </form>
-            </div>
-        `;
+                <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center;">
+                    <button type="submit" class="btn purple" style="padding: 10px 15px;">SIMPAN DATA</button>
+                    <button type="button" class="btn danger" id="closeModal" style="padding: 10px 15px; margin-left: 10px;">Batal</button>
+                </div>
+            </form>
+        </div>
+    `;
 
   document.getElementById("closeModal").addEventListener("click", () => {
     document.body.removeChild(overlay);
@@ -149,6 +151,7 @@ function showRegistrationForm(cardId) {
     .getElementById("newStudentForm")
     .addEventListener("submit", handleNewStudentRegistration);
 
+  // Gaya Overlay (dipertahankan di JS agar modal berfungsi, namun bisa dipindahkan ke CSS)
   if (overlay.style) {
     overlay.style.position = "fixed";
     overlay.style.top = 0;
