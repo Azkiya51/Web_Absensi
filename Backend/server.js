@@ -47,44 +47,6 @@ pool
     process.exit(1);
   });
 
-// ==================== AUTH ENDPOINT ====================
-// app.post("/api/auth/login", async (req, res) => {
-//   try {
-//     const { username, password } = req.body;
-//     if (!username || !password) {
-//       return res
-//         .status(400)
-//         .json({ success: false, message: "Username dan password diperlukan." });
-//     }
-
-//     const usernameMatch = username === STATIC_USERNAME;
-//     const passwordMatch = password === STATIC_PASSWORD;
-
-//     if (usernameMatch && passwordMatch) {
-//       const token = "mock-jwt-token-1-" + new Date().getTime();
-//       return res.json({
-//         success: true,
-//         message: "Login Berhasil",
-//         data: {
-//           token,
-//           name: STATIC_NAME,
-//           username: STATIC_USERNAME,
-//         },
-//       });
-//     } else {
-//       return res
-//         .status(401)
-//         .json({ success: false, message: "Username atau Password salah." });
-//     }
-//   } catch (error) {
-//     console.error("Login Error:", error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Terjadi kesalahan server saat login.",
-//     });
-//   }
-// });
-
 // ==================== STUDENTS ENDPOINT (REGISTRASI BARU) ====================
 app.post("/api/students/register", async (req, res) => {
   try {
