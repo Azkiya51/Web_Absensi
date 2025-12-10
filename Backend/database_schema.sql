@@ -72,8 +72,8 @@ INSERT INTO schedules (title, lecturer, room, code, start_time, end_time, day_of
 
 INSERT INTO invalid_scans (card_id, status) VALUES
 ('XYZ999', 'Tidak Terdaftar'),
-('AAA112', 'Tidak Terdaftar');
-('AAA113', 'Tidak Terdaftar');
-('AAA114', 'Tidak Terdaftar');
-('AAA115', 'Sesi Tidak Aktif');
+('AAA112', 'Tidak Terdaftar'),
+('AAA113', 'Tidak Terdaftar'),
+('AAA114', 'Tidak Terdaftar'),
+('AAA115', 'Sesi Tidak Aktif'),
 ('AAA116', 'Sesi Tidak Aktif');
