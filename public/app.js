@@ -1,14 +1,9 @@
 // app.js
 
 const API_BASE_URL = "http://localhost:3000/api";
-
-// =================================================================
-// JARVIS: KREDENSIAL STATIS BARU UNTUK LOGIN DI CLIENT-SIDE
-// =================================================================
 const STATIC_USERNAME = "admin";
 const STATIC_PASSWORD = "admin123";
 const STATIC_NAME = "Admin SAKTI";
-// =================================================================
 
 // --- Helper Functions ---
 
@@ -27,13 +22,6 @@ function getSessionStatus(start, end) {
   return "done";
 }
 
-// =================================================================
-// JARVIS: FUNGSI LOGIN DENGAN VERIFIKASI STATIS
-// =================================================================
-
-/**
- * Melakukan verifikasi login admin secara lokal (statis)
- */
 async function login(username, password) {
   // 1. Cek Kredensial secara lokal
   const usernameMatch = username === STATIC_USERNAME;
@@ -59,13 +47,6 @@ async function login(username, password) {
   return false; // Login Gagal
 }
 
-// =================================================================
-// JARVIS: LOGIKA PENDAFTARAN & HAPUS (BARU)
-// =================================================================
-
-/**
- * Handler yang dipanggil saat form pendaftaran mahasiswa baru di-submit
- */
 async function handleNewStudentRegistration(event) {
   event.preventDefault();
 
@@ -417,7 +398,6 @@ function renderInvalidSummary(invalidList) {
   });
 }
 
-
 // --- Masuk Kelas Functions ---
 
 let currentScheduleList = [];
@@ -512,54 +492,46 @@ async function renderAttendanceList(sessionCode) {
     '<div style="text-align:center; padding: 20px;">Memuat daftar kehadiran...</div>';
   try {
     // **********************************************
-    // MENGGUNAKAN DATA MOCK (TIDAK DIUBAH) - HARUSNYA PANGGIL API
+    // JARVIS MODIFICATION: MENGGANTI MOCK DENGAN FETCH API
     // **********************************************
 
-    // Panggil API yang sebenarnya:
-    // const response = await fetch(`${API_BASE_URL}/attendances/session/${sessionCode}`);
-    // const data = await response.json();
-    // const attendedList = data.data.attended;
-    // const unattendedList = data.data.unattended;
+    const response = await fetch(
+      `${API_BASE_URL}/attendances/session/${sessionCode}`
+    );
 
-    const mockAttended = [
-      { nim: "101", name: "Budi Santoso", scan_time: new Date().toISOString() },
-      {
-        nim: "102",
-        name: "Citra Dewi",
-        scan_time: new Date(Date.now() - 60000).toISOString(),
-      },
-      {
-        nim: "103",
-        name: "Agus Pratama",
-        scan_time: new Date(Date.now() - 120000).toISOString(),
-      },
-    ];
+    if (!response.ok) {
+      throw new Error(`Gagal mengambil data dari API: ${response.status}`);
+    }
 
-    const mockUnattended = [
-      { nim: "104", name: "Dina Amelia" },
-      { nim: "105", name: "Eko Wahyu" },
-      { nim: "106", name: "Fifi Lestari" },
-    ];
+    const data = await response.json();
 
-    const attendedList = mockAttended;
-    const unattendedList = mockUnattended;
+    if (!data.success) {
+      throw new Error(data.message || "Gagal mengambil data absensi sesi.");
+    }
+
+    // Ambil data nyata dari backend
+    const attendedList = data.data.attended;
+    const unattendedList = data.data.unattended;
+
+    // **********************************************
+    // AKHIR MODIFIKASI FETCH API
     // **********************************************
 
     let tableHtml = `
-                <div class="card" style="margin-top: 20px;">
-                    <h3>Daftar Kehadiran Sesi (${attendedList.length} Hadir / ${unattendedList.length} Belum Hadir)</h3>
-                    
-                    <table class="data-table" style="width:100%; margin-top: 15px;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid var(--border)">
-                                <th style="padding: 10px 0; text-align: left;">NIM</th>
-                                <th style="padding: 10px 0; text-align: left;">Nama Mahasiswa</th>
-                                <th style="padding: 10px 0; text-align: right;">Status</th>
-                                <th style="padding: 10px 0; text-align: right;">Waktu Absen</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
+            <div class="card" style="margin-top: 20px;">
+                <h3>Daftar Kehadiran Sesi (${attendedList.length} Hadir / ${unattendedList.length} Belum Hadir)</h3>
+                
+                <table class="data-table" style="width:100%; margin-top: 15px;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border)">
+                            <th style="padding: 10px 0; text-align: left;">NIM</th>
+                            <th style="padding: 10px 0; text-align: left;">Nama Mahasiswa</th>
+                            <th style="padding: 10px 0; text-align: right;">Status</th>
+                            <th style="padding: 10px 0; text-align: right;">Waktu Absen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
     const combinedList = [
       ...attendedList.map((s) => ({
         ...s,
@@ -581,29 +553,30 @@ async function renderAttendanceList(sessionCode) {
     if (combinedList.length === 0) {
       tableHtml += `<tr><td colspan="4" style="text-align: center; color: #777;">Tidak ada mahasiswa terdaftar untuk sesi ini.</td></tr>`;
     } else {
+      // Sorting list agar yang Hadir muncul di atas yang Belum Hadir
       combinedList.sort((a, b) => a.status.localeCompare(b.status));
       combinedList.forEach((student) => {
         tableHtml += `
-                            <tr style="${student.style}">
-                                <td>${student.nim}</td>
-                                    <td>${student.name}</td>
-                                    <td style="text-align:right;">${student.status}</td>
-                                <td style="text-align:right;">${student.time}</td>
-                            </tr>
-                        `;
+                            <tr style="${student.style}">
+                                <td>${student.nim}</td>
+                                    <td>${student.name}</td>
+                                    <td style="text-align:right;">${student.status}</td>
+                                <td style="text-align:right;">${student.time}</td>
+                            </tr>
+                        `;
       });
     }
 
     tableHtml += `
-                    </tbody>
-                </table>
-            </div>
-        `;
+                    </tbody>
+                </table>
+            </div>
+        `;
     tableContainer.innerHTML = tableHtml;
   } catch (error) {
     console.error("Error fetching attendance list:", error);
     tableContainer.innerHTML =
-      '<div style="text-align:center; padding: 20px; color:red;">Gagal memuat daftar kehadiran.</div>';
+      '<div style="text-align:center; padding: 20px; color:red;">Gagal memuat daftar kehadiran. (Cek koneksi/DB)</div>';
   }
 }
 
@@ -720,27 +693,29 @@ async function renderKartuInvalid() {
       data.data.forEach((card) => {
         const scanTime = new Date(card.scan_time);
 
-// Tanggal & jam
-const datePart = scanTime.toLocaleDateString("id-ID");
-const timePart = scanTime.toLocaleTimeString("id-ID", {
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  hour12: false,
-});
+        // Tanggal & jam
+        const datePart = scanTime.toLocaleDateString("id-ID");
+        const timePart = scanTime.toLocaleTimeString("id-ID", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        });
 
-// Kalau UID / status kosong, pakai '-'
-const uidText = card.card_id && card.card_id.trim() !== "" ? card.card_id : "-";
-const statusText = card.status && card.status.trim() !== "" ? card.status : "-";
+        // Kalau UID / status kosong, pakai '-'
+        const uidText =
+          card.card_id && card.card_id.trim() !== "" ? card.card_id : "-";
+        const statusText =
+          card.status && card.status.trim() !== "" ? card.status : "-";
 
-const isUnregistered = statusText === "Tidak Terdaftar";
-const actionText = isUnregistered ? "Daftarkan" : "Hapus";
-const buttonClass = isUnregistered ? "purple" : "danger";
+        const isUnregistered = statusText === "Tidak Terdaftar";
+        const actionText = isUnregistered ? "Daftarkan" : "Hapus";
+        const buttonClass = isUnregistered ? "purple" : "danger";
 
-const row = document.createElement("tr");
+        const row = document.createElement("tr");
 
-// URUTAN: Tanggal | Jam | UID | Status | Action
-row.innerHTML = `
+        // URUTAN: Tanggal | Jam | UID | Status | Action
+        row.innerHTML = `
   <td>${datePart}</td>
   <td>${timePart}</td>
   <td style="font-weight:600;">${uidText}</td>
